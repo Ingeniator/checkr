@@ -53,7 +53,7 @@ commit:  ## Auto-format code (Python example)
 
 .PHONY: test
 test:  ## Run tests
-	uv tool run pytest
+	uv tool run pytest -s
 
 .PHONY: test-coverage
 test-coverage:  ## Run tests with coverage report

@@ -12,6 +12,9 @@ class AppSettings(BaseSettings):
 
     version: str = "0.1.0"
 
+    # validators provider
+    provider_name: str = "mock"
+    provider_config_path: str = "config/provider.yaml"
 
 # Load settings
 settings = AppSettings()

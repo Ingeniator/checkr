@@ -1,0 +1,61 @@
+{
+    "input": [
+        {
+            "messages": [
+                { "content": "Here is missed role." },
+                { "role": "user", "content": "Hello!" },
+                { "role": "assistant", "content": "Hi there!" }
+            ]
+        },
+        {
+            "messages": [
+                { "role_not_exist": "system", "content": "You are helpful." },
+                { "role": "user", "content": "Hello!" },
+                { "role": "assistant", "content": "Hi there!" }
+            ]
+        },
+        {
+            "messages": [
+                { "role": "missing content"},
+                { "role": "user", "content": "Hello!" },
+                { "role": "assistant", "content": "Hi there!" }
+            ]
+        },
+        {
+            "messages": [
+                { "role": "assistant", "content": "Wrong message order!" },
+                { "role": "user", "content": "Hello!" }
+            ]
+        },
+        {
+            "messages": [
+                { "role": "assistant", "content": "Duplicate message!" },
+                { "role": "user", "content": "Hello!" }
+            ]
+        },
+        {
+            "messages": [
+                { "role": "assistant", "content": "Duplicate message!" },
+                { "role": "user", "content": "Hello!" }
+            ]
+        },
+        {
+            "messages": [
+                { "role": "assistant", "content": "Link non-exist!" },
+                { "role": "user", "content": "Hello! https://nowhe.re" }
+            ]
+        },
+        {
+            "messages": [
+                { "role": "assistant", "content": "Ciao, come stai oggi? I hope you're well. Missmatched lang!" },
+                { "role": "user", "content": "Bonjour, comment ça va ?" }
+            ]
+        }
+    ],
+    "expect": {
+      "ChatStructureValidator": "fail",
+      "DeduplicationValidator": "fail",
+      "LinkAvailabilityValidator": "fail",
+      "LanguageConsistencyValidator": "fail"
+    }
+  }
