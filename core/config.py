@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 class AppSettings(BaseSettings):
     app_name: str = "Checkr"
@@ -13,7 +13,7 @@ class AppSettings(BaseSettings):
     version: str = "0.1.0"
 
     # validators provider
-    provider_name: str = "mock"
+    provider_name: str = "gitlab"
     provider_config_path: str = "config/provider.yaml"
 
 # Load settings

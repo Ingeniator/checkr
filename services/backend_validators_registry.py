@@ -1,9 +1,7 @@
 # backend_validators_registry.py
 import importlib
-import pkgutil
 from pathlib import Path
-from types import ModuleType
-from typing import Any, Type, List, Tuple
+from typing import Type, List, Tuple
 from validators.base_validator import BaseValidator
 from schemas.validators import ValidatorDetail, ValidatorType
 from utils.frontmatter import extract_frontmatter_from_file
@@ -62,6 +60,6 @@ def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], Valid
                         source=f"{SOURCE_PREFIX}/{rel_path}"
                     )
                 ))
-                print(f'Discovered validator source = {SOURCE_PREFIX}/{rel_path}')
+                print(f'Discovered validator source: {SOURCE_PREFIX}/{rel_path}')
 
     return results

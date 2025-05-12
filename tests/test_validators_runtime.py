@@ -2,7 +2,7 @@
 import os
 import json
 import pytest
-from validators.base_validator import BaseValidator
+from services.backend_validators_registry import discover_validators_with_metadata
 
 # Adjust path to your test data dir
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")

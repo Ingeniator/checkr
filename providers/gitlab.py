@@ -14,7 +14,7 @@ class GitlabValidatorProvider(BaseValidatorProvider):
 
     def __init__(self, config_path: str = settings.provider_config_path):
         with open(config_path, "r") as f:
-            self.config = yaml.safe_load(f)["gitlab"]
+            self.config = yaml.safe_load(f)[self.source_prefix]
 
         self.gl = gitlab.Gitlab(self.config["url"], private_token=self.config["private_token"])
         self.project = self.gl.projects.get(self.config["project_id"])

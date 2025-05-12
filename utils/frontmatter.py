@@ -6,8 +6,6 @@ from core.logging_config import setup_logging
 
 logger = setup_logging()
 
-# FRONTMATTER_PATTERN = re.compile(r'^"""\n---(.*?)---\n"""', re.DOTALL | re.MULTILINE)
-
 FRONTMATTER_REGEX = re.compile(r"^\s*---\s*\n(.*?)\n---", re.DOTALL | re.MULTILINE)
 
 def extract_frontmatter_from_file(path: Path) -> dict[str, Any]:
@@ -19,7 +17,11 @@ def extract_frontmatter(content: str) -> dict:
         if match:
             try:
                 return yaml.safe_load(match.group(1)) or {}
-            except yaml.YAMLError:
-                logger.warning(f"Failed to load frontmatter for {module_name}: {e}")
+            except yaml.YAMLError as e:
+                logger.warning(f"Failed to load frontmatter for {content}: {e}")
                 return {}
         return {}
+    
+def render_frontmatter(frontmatter: dict[str, Any]) -> str:
+    yaml_str = yaml.safe_dump(frontmatter, sort_keys=False, allow_unicode=True).strip()
+    return f"---\n{yaml_str}\n---"

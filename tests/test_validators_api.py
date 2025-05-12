@@ -60,7 +60,7 @@ def test_get_validator_source_success(client, monkeypatch, caplog):
         print(record.message)
 
     assert_response_ok(response)
-    assert response.json() == 'Mock content'
+    assert response.text == 'Mock content'
 
 def test_get_validator_source_not_found(client, monkeypatch):
     monkeypatch.setattr(settings, "provider_name", "mock")

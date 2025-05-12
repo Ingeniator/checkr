@@ -1,6 +1,6 @@
 
 # core/app.py
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from core.config import settings
 from core.logging_config import setup_logging
