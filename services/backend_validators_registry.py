@@ -10,7 +10,7 @@ from core.logging_config import setup_logging
 logger = setup_logging()
 
 VALIDATORS_PACKAGE = "validators"
-VALIDATORS_PATH = Path(__file__).parent.parent / "validators"
+VALIDATORS_PATH = Path(__file__).parent.parent / VALIDATORS_PACKAGE
 SOURCE_PREFIX="backend"
 
 def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], ValidatorDetail]]:
@@ -19,9 +19,7 @@ def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], Valid
     for file_path in VALIDATORS_PATH.rglob("*.py"):
         if file_path.name == "base_validator.py":
             continue
-        if not file_path.stem.endswith("_validator"):
-            continue
-
+        
         rel_path = file_path.relative_to(VALIDATORS_PATH)
         module_name = f"{VALIDATORS_PACKAGE}." + ".".join(rel_path.with_suffix("").parts)
 

@@ -1,6 +1,7 @@
 """
 ---
 name: Remote Validator Per Item
+type: base
 description: It sends each item separately to a remote backend for validation, with native progress reporting.
 tags: [remote]
 ---
