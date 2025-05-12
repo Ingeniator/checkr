@@ -1,6 +1,6 @@
 """
 ---
-name: Base Abstract Validator
+title: Base Abstract Validator
 type: base
 description: Set validation logic and make pyodide integration
 tags: [abstract]
@@ -46,7 +46,7 @@ class BaseValidator(ABC):
             if errors:
                 return {
                     "status": "fail",
-                    "errors": [e.model_dump() for e in errors],
+                    "errors": [e.dict() for e in errors],
                     "validator": self.__class__.__name__
                 }
             return {
@@ -67,8 +67,7 @@ class BaseValidator(ABC):
                     "validator": self.__class__.__name__,
                     "stage": stage_name
                 })
-            except Exception as e:
-                print(f"Report stage callback failed: {e}")
+            except Exception:
                 pass
 
     def report_progress(self, current: int, total: int):
@@ -80,8 +79,7 @@ class BaseValidator(ABC):
                     "total": total
                 })
             except Exception as e:
-                print(f"Report progress callback failed: {e}")
-                pass
+                print(f"Progress callback failed: {e}")
 
     @abstractmethod
     async def _validate(self, data: list[dict[str, Any]]) -> list[ValidationErrorDetail]:

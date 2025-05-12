@@ -1,5 +1,4 @@
 **/__pycache__/*.pyc
-__pycache__/entrypoint.cpython-313.pyc
-core/__pycache__/app.cpython-313.pyc
-__pycache__/entrypoint.cpython-313.pyc
 config/provider.yaml
+__pycache__/*.pyc
+core/__pycache__/*.pyc
