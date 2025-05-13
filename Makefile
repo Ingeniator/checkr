@@ -38,6 +38,8 @@ build:  ## Build and run application
 
 .PHONY: run
 run:  ## Run application
+	python3 -m pip install uv && \
+	python3 -m uv sync --frozen --no-cache && \
 	.venv/bin/fastapi run entrypoint.py
 
 .PHONY: run-fake-llm
