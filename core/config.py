@@ -13,7 +13,7 @@ class AppSettings(BaseSettings):
     version: str = "0.1.0"
 
     # validators provider
-    provider_name: str = "gitlab"
+    provider_name: str = "github"
     provider_config_path: str = "config/provider.yaml"
     provider_cache_ttl: int = 600 #10 min
 

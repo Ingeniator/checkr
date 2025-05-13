@@ -1,6 +1,7 @@
 """
 ---
 title: Revizor Remote Validator
+enabled: false
 stage: draft
 description: Run validation using revizor project
 tags: [remote, gateX]
