@@ -7,17 +7,15 @@ from providers.base import BaseValidatorProvider
 from schemas.validators import ValidatorDetail, ValidatorType
 from core.logging_config import setup_logging
 from utils.frontmatter import extract_frontmatter
+from utils.yaml import load_and_expand_yaml
 
 logger = setup_logging()
 
 class GithubValidatorProvider(BaseValidatorProvider):
-    source_prefix = "github"
-    base_validators: list[ValidatorDetail]
-    non_base_validators: list[ValidatorDetail]
 
     def __init__(self, config_path: str = settings.provider_config_path):
-        with open(config_path, "r") as f:
-            self.config = yaml.safe_load(f)[self.source_prefix]
+        self.source_prefix = "github"
+        self.config = load_and_expand_yaml(config_path)[self.source_prefix]
 
         self.repo = self.config["repo"]  # e.g., "org/repo"
         self.ref = self.config.get("ref", "main")
@@ -151,7 +149,6 @@ class GithubValidatorProvider(BaseValidatorProvider):
         return await self._fetch_validators()
 
     async def fetch_frontend_base_validators_source(self) -> dict[str, str]:
-        logger.info("fetch_frontend_base_validators_source")
         if not self.base_validators:
             await self._fetch_validators(include_base_validator=True)
 

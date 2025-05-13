@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from schemas.validators import ValidatorDetail
 
 class BaseValidatorProvider(ABC):
-    source_prefix: str = ""
 
     @abstractmethod
     async def fetch_frontend_validators(self) -> list[ValidatorDetail]:

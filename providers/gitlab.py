@@ -6,24 +6,22 @@ from providers.base import BaseValidatorProvider
 from schemas.validators import ValidatorDetail, ValidatorType
 from core.logging_config import setup_logging
 from utils.frontmatter import extract_frontmatter
+from utils.yaml import load_and_expand_yaml
 
 logger = setup_logging()
 
 class GitlabValidatorProvider(BaseValidatorProvider):
-    source_prefix = "gitlab"
-    base_validators: list[ValidatorDetail]
-    non_base_validators: list[ValidatorDetail]
 
     def __init__(self, config_path: str = settings.provider_config_path):
-        with open(config_path, "r") as f:
-            self.config = yaml.safe_load(f)[self.source_prefix]
-
+        self.source_prefix = "gitlab"
+        self.config = load_and_expand_yaml(config_path)[self.source_prefix]
         self.gl = gitlab.Gitlab(self.config["url"], private_token=self.config["private_token"])
         self.project = self.gl.projects.get(self.config["project_id"])
         self.ref = self.config.get("ref", "main")
         self.base_path = self.config.get("path", "")
         self.base_validators = []
         self.non_base_validators = []
+        self.content_dict: dict[str, str] = {}
 
     def _walk_tree(self) -> list[str]:
         all_files = []
@@ -46,6 +44,7 @@ class GitlabValidatorProvider(BaseValidatorProvider):
             try:
                 f = self.project.files.get(file_path=file_path, ref=self.ref)
                 content = f.decode().decode("utf-8")
+                self.content_dict[file_path] = content
                 front = extract_frontmatter(content)
                 if "title" in front \
                     and "description" in front:
@@ -90,12 +89,7 @@ class GitlabValidatorProvider(BaseValidatorProvider):
         # Remove the SOURCE_PREFIX only if it exists
         if file_path.startswith(f"{self.source_prefix}/"):
             file_path = file_path[len(self.source_prefix) + 1:]
-        try:
-            f = self.project.files.get(file_path=file_path, ref=self.ref)
-            return f.decode().decode('utf-8')
-        except Exception as e:
-            logger.error(f"[WARN] Failed to fetch source for {file_path}: {e}")
-            return ""
+        return self.content_dict.get(file_path, "")
 
     async def fetch_frontend_validators(self) -> list[ValidatorDetail]:
         if len(self.non_base_validators) > 0:

@@ -1,0 +1,13 @@
+gitlab:
+  url: "https://gitlab.com"
+  private_token: "${GITLAB_PRIVATE_TOKEN}"
+  project_id: "waityourletters/checkr-frontend-validators"
+  ref: "main"
+  path: "validators"
+github:
+  repo: "Ingeniator/checkr"
+  ref: "main"
+  # private_token: "ghp_xxx..."
+  path: "frontend/validators"
+backend:
+  path: "validators"

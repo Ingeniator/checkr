@@ -19,6 +19,8 @@
       "DeduplicationValidator": "pass",
       "LinkAvailabilityValidator": "pass",
       "LanguageConsistencyValidator": "pass",
-      "DialogBalanceValidator": "pass"
+      "DialogBalanceValidator": "pass",
+      "QuantitySizeValidator": "fail",
+      "GuardrailComplianceValidator": "pass"
     }
   }

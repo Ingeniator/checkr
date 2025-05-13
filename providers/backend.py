@@ -15,9 +15,9 @@ from validators.base_validator import BaseValidator
 logger = setup_logging()
 
 class BackendValidatorProvider(BaseValidatorProvider):
-    source_prefix = "backend"
 
     def __init__(self, config_path: str = settings.provider_config_path):
+        self.source_prefix = "backend"
         with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)[self.source_prefix]
 

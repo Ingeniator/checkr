@@ -1,6 +1,0 @@
-gitlab:
-  url: "https://gitlab.com"
-  private_token: "glpat-token"
-  project_id: "project_name"
-  ref: "main"
-  path: "validators"

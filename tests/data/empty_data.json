@@ -4,6 +4,9 @@
       "ChatStructureValidator": "fail",
       "DeduplicationValidator": "pass",
       "LinkAvailabilityValidator": "pass",
-      "LanguageConsistencyValidator": "pass"
+      "LanguageConsistencyValidator": "pass",
+      "QuantitySizeValidator": "fail",
+      "DialogBalanceValidator": "fail",
+      "GuardrailComplianceValidator": "pass"
     }
   }

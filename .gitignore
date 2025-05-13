@@ -1,4 +1,4 @@
 **/__pycache__/*.pyc
-config/provider.yaml
 __pycache__/*.pyc
 core/__pycache__/*.pyc
+.env
