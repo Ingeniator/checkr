@@ -5,7 +5,7 @@ stage: draft
 description: Run validation per item using endpoint from config
 tags: [remote, gate10]
 options:
-  endpoint: "https://example.com/api/validate"
+  endpoint: "/api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py"
 ---
 """
 

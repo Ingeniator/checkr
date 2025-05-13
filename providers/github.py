@@ -114,6 +114,6 @@ class GithubValidatorProvider(BaseValidatorProvider):
             parent_path = str(Path(self.base_path).parent.as_posix())
             prefix_path=f"{self.source_prefix}/{parent_path}"
             if file_path.startswith(prefix_path):
-                file_path = file_path[len(self.prefix_path) + 1:]
+                file_path = file_path[len(prefix_path) + 1:]
             result[file_path] = await self.fetch_frontend_validator_source(base_validator.source)
         return result
