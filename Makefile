@@ -34,7 +34,7 @@ dev-init:  ## Initialize development environment
 .PHONY: build
 build:  ## Build and run application
 	python3 -m pip install uv && \
-	uv sync --frozen --no-cache && \
+	python3 -m uv sync --frozen --no-cache && \
 	.venv/bin/fastapi run entrypoint.py
 
 .PHONY: run
