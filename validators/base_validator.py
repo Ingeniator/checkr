@@ -46,7 +46,7 @@ class BaseValidator(ABC):
             if errors:
                 return {
                     "status": "fail",
-                    "errors": [e.model_dump() for e in errors],
+                    "errors": [e.model_dump() if hasattr(e, "model_dump") else e.dict() for e in errors],
                     "validator": self.__class__.__name__
                 }
             return {

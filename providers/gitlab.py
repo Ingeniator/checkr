@@ -110,11 +110,12 @@ class GitlabValidatorProvider(BaseValidatorProvider):
         else:
             base_validators = await self._fetch_validators(base=True)
         result = {}
-        for base_validator in base_validators:
+        for base_validator in self.base_validators:
             file_path = base_validator.source
+            if file_path.startswith(self.source_prefix):
+                file_path = file_path[len(self.source_prefix) + 1:]
             parent_path = str(Path(self.base_path).parent.as_posix())
-            prefix_path=f"{self.source_prefix}/{parent_path}"
-            if file_path.startswith(prefix_path):
-                file_path = file_path[len(prefix_path) + 1:]
-            result[file_path] = await self.fetch_frontend_validator_source(base_validator.source)
+            if file_path.startswith(parent_path):
+                file_path = file_path[len(parent_path) + 1:]
+            result[file_path] = self.content_dict.get(file_path, "")
         return result

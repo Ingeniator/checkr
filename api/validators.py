@@ -71,7 +71,7 @@ async def _validate(gates: [], dataset: list[DataItem], options: dict[str, Any],
     all_errors = []
     for gate in gates:
         validator = request_.app.state.backend_validators_dict[gate](options)
-        raw_dataset = [item.model_dump() for item in dataset]
+        raw_dataset = [item.model_dump() if hasattr(item, "model_dump") else item.dict() for item in dataset]
         result = await validator.validate(raw_dataset)
         logger.debug(result)
         if result["status"] == "fail":
