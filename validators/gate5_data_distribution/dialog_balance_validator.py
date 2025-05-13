@@ -97,23 +97,24 @@ class DialogBalanceValidator(BaseValidator):
         stage+=1
         self.report_progress(stage, total_stages)
 
-        # Optional: Create a distribution plot and attach it to errors for review
-        fig, ax = plt.subplots(figsize=(6, 4))
-        df["length"].plot(kind="hist", ax=ax, bins=10)
-        ax.set_title("Dialog Length Distribution")
-        ax.set_xlabel("Number of turns")
-        buf = io.BytesIO()
-        plt.tight_layout()
-        fig.savefig(buf, format="png")
-        plt.close(fig)
-        buf.seek(0)
-        img_data = base64.b64encode(buf.read()).decode("utf-8")
-        errors.append(ValidationErrorDetail(
-            index=None,
-            error=f"Dialog length distribution plot attached as base64 PNG: data:image/png;base64,{img_data}",
-            code="dialog_length_plot",
-            field="visualization",
-        ))
+        if len(errors) > 0:
+            # Optional: Create a distribution plot and attach it to errors for review
+            fig, ax = plt.subplots(figsize=(6, 4))
+            df["length"].plot(kind="hist", ax=ax, bins=10)
+            ax.set_title("Dialog Length Distribution")
+            ax.set_xlabel("Number of turns")
+            buf = io.BytesIO()
+            plt.tight_layout()
+            fig.savefig(buf, format="png")
+            plt.close(fig)
+            buf.seek(0)
+            img_data = base64.b64encode(buf.read()).decode("utf-8")
+            errors.append(ValidationErrorDetail(
+                index=None,
+                error=f"Dialog length distribution plot attached as base64 PNG: data:image/png;base64,{img_data}",
+                code="dialog_length_plot",
+                field="visualization",
+            ))
         stage+=1
         self.report_progress(stage, total_stages)
         

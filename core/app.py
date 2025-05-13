@@ -1,6 +1,9 @@
 
 # core/app.py
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from contextlib import asynccontextmanager
 from core.config import settings
 from core.logging_config import setup_logging
@@ -15,7 +18,7 @@ logger = setup_logging()
 async def lifespan(app: FastAPI):
     # Startup logic
     logger.info("Application startup...")
-    init_validators(app)
+    await init_validators(app)
     
     yield  # ← This is where the app runs
 
@@ -26,11 +29,18 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(title=settings.app_name, docs_url="/docs", debug=settings.debug, lifespan=lifespan)
-    app.include_router(validator_router, prefix="/api/v1")
+    app.include_router(validator_router, prefix="/api/v0")
     # Add Logging Middleware
     app.add_middleware(LoggingMiddleware)
     # Add Prometheus middleware
     app.add_middleware(PrometheusMiddleware)
+
+    # Serve static files (e.g., CSS, JS, images) at /static
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    # Serve index.html at root
+    @app.get("/", include_in_schema=False)
+    async def root():
+        return FileResponse(Path("static/index.html"))
 
     # Expose metrics endpoint
     @app.get("/metrics")

@@ -1,5 +1,5 @@
 import pytest
-from services.frontend_validators_registry import fetch_frontend_validators, fetch_frontend_validator_source
+from services.frontend_validators_registry import fetch_frontend_validators, fetch_frontend_validator_source, fetch_frontend_base_validators_source
 from schemas.validators import ValidatorDetail, ValidatorType
 
 @pytest.mark.asyncio
@@ -51,3 +51,9 @@ async def test_gitlab_fetch_frontend_validators_returns_expected_validator():
     assert isinstance(content, str)
     assert "Chat Structure Validator" in content  # Based on known docstring/frontmatter
     assert "class" in content and "BaseValidator" in content
+
+@pytest.mark.asyncio
+async def test_gitlab_fetch_frontend_base_validators_source_returns_expected_data():
+    provider_name = "gitlab"
+    source = await fetch_frontend_base_validators_source(provider_name)
+    assert len(source)>0

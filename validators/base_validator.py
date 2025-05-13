@@ -1,6 +1,6 @@
 """
 ---
-name: Base Abstract Validator
+title: Base Abstract Validator
 type: base
 description: Set validation logic and make pyodide integration
 tags: [abstract]

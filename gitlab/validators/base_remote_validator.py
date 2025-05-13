@@ -1,6 +1,6 @@
 """
 ---
-name: Base Remote Validator
+title: Base Remote Validator
 type: base
 description: Delegates validation to a remote backend service and wraps its errors.
 tags: [remote]
@@ -9,72 +9,104 @@ tags: [remote]
 
 from validators.base_validator import BaseValidator, ValidationErrorDetail
 import json
+import asyncio
 
-# In Pyodide, use pyfetch for HTTP. On a normal Python runtime you'd swap this out for `requests`.
+# Detect runtime environment and define fetch_func accordingly
 try:
     from pyodide.http import pyfetch
+
+    async def fetch_func(url, body):
+        task = asyncio.create_task(pyfetch(
+            url=url,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            body=json.dumps(body)
+        ))
+        return await task
+
 except ImportError:
-    pyfetch = None
+    import requests
+
+    class FakeResponse:
+        def __init__(self, resp):
+            self.status = resp.status_code
+            self._text = resp.text
+            self._json = json.loads(resp.text)
+
+        async def text(self): return self._text
+        async def json(self): return self._json
+
+        @property
+        def ok(self): return 200 <= self.status < 300
+
+    async def fetch_func(url, body):
+        # Wrap the sync request in an async-compatible response
+        resp = requests.post(
+            url,
+            data=json.dumps(body),
+            headers={"Content-Type": "application/json"}
+        )
+        return FakeResponse(resp)
+
 
 class BaseRemoteValidator(BaseValidator):
     endpoint: str | None = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.endpoint = getattr(self, "endpoint", None) or self.options.get("endpoint")
+
     async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
-        if not pyfetch:
-            raise RuntimeError("RemoteValidator requires pyodide HTTP support (pyfetch).")
-        
-        endpoint = self.endpoint or self.options.get("endpoint")
-        if not endpoint:
+        if not self.endpoint:
             raise ValueError(f"No 'endpoint' provided in options for {self.validator_name}.")
 
-        # Report that we're about to send the request
         self.report_stage("sending to remote")
-        resp = await pyfetch(
-            endpoint,
-            method="POST",
-            headers={"Content-Type": "application/json"},
-            body=json.dumps({"data": data})
-        )
 
-        # HTTP‐level error
+        # Ensure fetch is awaited properly
+        resp = await fetch_func(self.endpoint, {"dataset": data, "options": self.options})
+
         if resp.status != 200:
-            text = await resp.text()
-            detail = ValidationErrorDetail(
+            try:
+                if hasattr(resp, "text"):
+                    text = await resp.text()
+                elif hasattr(resp, "json"):
+                    text = json.dumps(await resp.json())
+                else:
+                    text = f"⚠️ Could not extract body from response: {resp}"
+            except Exception as e:
+                text = f"⚠️ Failed to parse response body: {e}"
+            return [ValidationErrorDetail(
                 error=f"Remote HTTP error {resp.status}: {text}",
                 index=None,
                 field=None,
                 code="remote_http_error"
-            )
-            return [detail]
+            )]
 
-        # Parse JSON
         result = await resp.json()
-        status = result.get("status")
+        status = result.get("status", "pass" if resp.status == 200 else "fail")
         raw_errors = result.get("errors", [])
 
         self.report_stage("processing response")
 
-        # If remote says pass, return no errors
+        # Give time for pending tasks (Pyodide safety)
+        await asyncio.sleep(0)
+
         if status == "pass":
             return []
 
-        # If remote says fail, normalize errors
         details: list[ValidationErrorDetail] = []
         for err in raw_errors:
             if isinstance(err, dict):
-                # assume keys match ValidationErrorDetail fields
                 try:
                     details.append(ValidationErrorDetail(**err))
-                except Exception:
-                    # fallback: put the whole dict into the error message
+                except Exception as e:
                     details.append(ValidationErrorDetail(
-                        error=f"Unexpected error format: {json.dumps(err)}",
+                        error=f"Unexpected error format: {json.dumps(err)} ({e})",
                         index=None,
                         field=None,
                         code="remote_error_parse"
                     ))
             else:
-                # string or other type
                 details.append(ValidationErrorDetail(
                     error=str(err),
                     index=None,

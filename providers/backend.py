@@ -65,7 +65,7 @@ class BackendValidatorProvider(BaseValidatorProvider):
             front = extract_frontmatter_from_file(full_file_path)
             obj =  self._get_validator_class_from_file(full_file_path)
             class_name = obj.__name__
-            endpoint = f"\'/validate/{self.source_prefix}/{file_path}\'"
+            endpoint = f"\'/api/v0/validate/{self.source_prefix}/{file_path}\'"
             result = f"""
 \"\"\"
 {render_frontmatter(front)}

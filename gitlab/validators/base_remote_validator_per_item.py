@@ -1,6 +1,7 @@
 """
 ---
-name: Remote Validator Per Item
+title: Remote Validator Per Item
+type: base
 description: It sends each item separately to a remote backend for validation, with native progress reporting.
 tags: [remote]
 ---
@@ -8,21 +9,35 @@ tags: [remote]
 
 from validators.base_validator import BaseValidator, ValidationErrorDetail
 import json
+import asyncio
 
 # In Pyodide, use pyfetch. In CPython you might swap in requests.
 try:
     from pyodide.http import pyfetch
+
+    async def fetch_func(url, body):
+        task = asyncio.create_task(pyfetch(
+            url=url,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            body=json.dumps(body)
+        ))
+        return await task
 except ImportError:
     pyfetch = None
 
-class RemoteValidatorPerItem(BaseValidator):
+class BaseRemoteValidatorPerItem(BaseValidator):
     endpoint: str | None = None
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.endpoint = getattr(self, "endpoint", None) or self.options.get("endpoint")
+
     async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
         if not pyfetch:
             raise RuntimeError(f"{self.validator_name} requires pyodide HTTP support (pyfetch).")
 
-        endpoint = self.endpoint or self.options.get("endpoint")
+        endpoint = self.endpoint
         if not endpoint:
             raise ValueError(f"No 'endpoint' provided in options for {self.validator_name}.")
 
@@ -35,16 +50,19 @@ class RemoteValidatorPerItem(BaseValidator):
             self.report_progress(idx + 1, total)
 
             # Send single-item request
-            resp = await pyfetch(
-                endpoint,
-                method="POST",
-                headers={"Content-Type": "application/json"},
-                body=json.dumps({"item": item, "index": idx})
-            )
+            resp = await fetch_func(self.endpoint, {"dataset": [item], "index": idx, "options": self.options})
 
             # HTTP error?
             if resp.status != 200:
-                text = await resp.text()
+                try:
+                    if hasattr(resp, "text"):
+                        text = await resp.text()
+                    elif hasattr(resp, "json"):
+                        text = json.dumps(await resp.json())
+                    else:
+                        text = f"⚠️ Could not extract body from response: {resp}"
+                except Exception as e:
+                    text = f"⚠️ Failed to parse response body: {e}"
                 errors.append(ValidationErrorDetail(
                     error=f"HTTP {resp.status}: {text}",
                     index=idx,

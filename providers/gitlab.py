@@ -11,6 +11,8 @@ logger = setup_logging()
 
 class GitlabValidatorProvider(BaseValidatorProvider):
     source_prefix = "gitlab"
+    base_validators: list[ValidatorDetail]
+    non_base_validators: list[ValidatorDetail]
 
     def __init__(self, config_path: str = settings.provider_config_path):
         with open(config_path, "r") as f:
@@ -20,6 +22,8 @@ class GitlabValidatorProvider(BaseValidatorProvider):
         self.project = self.gl.projects.get(self.config["project_id"])
         self.ref = self.config.get("ref", "main")
         self.base_path = self.config.get("path", "")
+        self.base_validators = []
+        self.non_base_validators = []
 
     def _walk_tree(self) -> list[str]:
         all_files = []
@@ -35,10 +39,9 @@ class GitlabValidatorProvider(BaseValidatorProvider):
                     all_files.append(item["path"])
         return all_files
 
-    
-
-    async def fetch_frontend_validators(self) -> list[ValidatorDetail]:
-        result = []
+    async def _fetch_validators(self, include_base_validator = False) -> list[ValidatorDetail]:
+        self.non_base_validators = []
+        self.base_validators = []
         for file_path in self._walk_tree():
             try:
                 f = self.project.files.get(file_path=file_path, ref=self.ref)
@@ -50,7 +53,7 @@ class GitlabValidatorProvider(BaseValidatorProvider):
                     tags = raw_tags if isinstance(raw_tags, list) else [raw_tags] if raw_tags else []
                     validator_type = front.get("type", ValidatorType.dataset_frontend)
                     if validator_type != "base":
-                        result.append(
+                        self.non_base_validators.append(
                             ValidatorDetail(
                                 title=front.get("title", Path(file_path).stem),
                                 type=ValidatorType(validator_type),
@@ -63,12 +66,25 @@ class GitlabValidatorProvider(BaseValidatorProvider):
                             )
                         )
                     else:
-                        logger.debug(f"Skipping base validator file {file_path}")
+                        self.base_validators.append(
+                            ValidatorDetail(
+                                title=front.get("title", Path(file_path).stem),
+                                type=ValidatorType(validator_type),
+                                enabled=front.get("enabled", True),
+                                stage=front.get("stage", "experimental"),
+                                description=front.get("description", ""),
+                                tags=tags,
+                                options=front.get("options", {}),
+                                source=f"{self.source_prefix}/{file_path}"
+                            )
+                        )
             except Exception as e:
                 logger.warning(f"Skipping file {file_path} due to error: {e}")
                 continue
-        logger.debug(result)
-        return result
+        if include_base_validator:
+            return self.base_validators
+        else:
+            return self.non_base_validators
     
     async def fetch_frontend_validator_source(self, file_path: str) -> str:
         # Remove the SOURCE_PREFIX only if it exists
@@ -80,3 +96,23 @@ class GitlabValidatorProvider(BaseValidatorProvider):
         except Exception as e:
             logger.error(f"[WARN] Failed to fetch source for {file_path}: {e}")
             return ""
+
+    async def fetch_frontend_validators(self) -> list[ValidatorDetail]:
+        if len(self.non_base_validators) > 0:
+            return self.non_base_validators
+        else:
+            return await self._fetch_validators()
+
+    async def fetch_frontend_base_validators_source(self) -> dict[str, str]:
+        logger.info("fetch_frontend_base_validators_source")
+        if len(self.base_validators) > 0:
+            base_validators = self.base_validators
+        else:
+            base_validators = await self._fetch_validators(base=True)
+        result = {}
+        for base_validator in base_validators:
+            file_path = base_validator.source
+            if file_path.startswith(f"{self.source_prefix}/"):
+                file_path = file_path[len(self.source_prefix) + 1:]
+            result[file_path] = await self.fetch_frontend_validator_source(base_validator.source)
+        return result

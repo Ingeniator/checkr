@@ -15,6 +15,7 @@ class AppSettings(BaseSettings):
     # validators provider
     provider_name: str = "gitlab"
     provider_config_path: str = "config/provider.yaml"
+    provider_cache_ttl: int = 600 #10 min
 
 # Load settings
 settings = AppSettings()

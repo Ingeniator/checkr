@@ -25,4 +25,14 @@ class BaseValidatorProvider(ABC):
             str: The content of the file as a UTF-8 decoded string, or an empty string if error occurs.
         """
         pass
+    
+    async def fetch_frontend_base_validators_source(self) -> dict[str, str]:
+        """
+        Fetches the raw content of a base validator source files given its path in the repository.
+
+
+        Returns:
+            dict[source, content]: Dict with the content of the files as a UTF-8 decoded string, or an empty dict if error occurs.
+        """
+        pass
         

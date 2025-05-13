@@ -58,6 +58,6 @@ def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], Valid
                         source=f"{SOURCE_PREFIX}/{rel_path}"
                     )
                 ))
-                print(f'Discovered validator source: {SOURCE_PREFIX}/{rel_path}')
+                logger.info(f'Discovered validator source: {SOURCE_PREFIX}/{rel_path}')
 
     return results

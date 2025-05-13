@@ -31,6 +31,12 @@ dev-init:  ## Initialize development environment
 	uv pip install --dev
 	uvx pre-commit install
 
+.PHONY: build
+build:  ## Build and run application
+	python3 -m pip install uv && \
+	uv sync --frozen --no-cache && \
+	.venv/bin/fastapi run entrypoint.py
+
 .PHONY: run
 run:  ## Run application
 	uv run entrypoint.py
@@ -53,7 +59,7 @@ commit:  ## Auto-format code (Python example)
 
 .PHONY: test
 test:  ## Run tests
-	uv tool run pytest -s
+	uv run pytest -s
 
 .PHONY: test-coverage
 test-coverage:  ## Run tests with coverage report

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal, Any
 
 from enum import Enum
 
@@ -18,9 +18,13 @@ class DataItem(BaseModel):
 
 class DatasetValidationRequest(BaseModel):
     dataset: list[DataItem]
+    index: int | None = None # for validation per item
+    options: dict[str, Any] = {} # dict of options used by validators
 
 class DatasetGroupValidationRequest(DatasetValidationRequest):
     dataset: list[DataItem]
+    index: int | None = None
+    options: dict[str, Any] = {}
     gates: list[str] = [] # array of validator's source
 
 class ValidatorDetail(BaseModel):

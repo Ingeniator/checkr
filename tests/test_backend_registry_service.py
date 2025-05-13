@@ -31,7 +31,7 @@ async def test_all_backend_validators_execute_without_exceptions(client):
     known_sources = {v: v for v in client.app.state.backend_validators_dict}
 
     for source in known_sources:
-        validator = client.app.state.backend_validators_dict[source]
+        validator = client.app.state.backend_validators_dict[source]()
         try:
             result = await validator.validate(dummy_data)
             assert "status" in result
