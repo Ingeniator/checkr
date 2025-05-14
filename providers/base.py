@@ -34,4 +34,3 @@ class BaseValidatorProvider(ABC):
             dict[source, content]: Dict with the content of the files as a UTF-8 decoded string, or an empty dict if error occurs.
         """
         pass
-        

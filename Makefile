@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 
 # Application name
-APP_NAME := LLMProxy
+APP_NAME := Checkr
 
 # Docker image name
 DOCKER_IMAGE := $(APP_NAME)
@@ -16,6 +16,9 @@ K8S_DIR := k8s/
 CYAN  := \033[36m
 RESET := \033[0m
 
+# to convert repo in single file and restore it
+SCRIPT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+SNAPSHOT := $(SCRIPT_DIR).snapshot.txt
 ## ---------- General Commands ----------
 
 .PHONY: help
@@ -27,6 +30,49 @@ help:  ## Show available commands
 .PHONY: snapshot
 snapshot:
 	 find . -type f -not -path './dev/*' -not -path './uv.lock' -not -path './.git/*' -not -path '**/__pycache__/*' -not -path '**/.DS_Store' -not -path './.venv/*' -not -path './.*' -exec bash -c 'printf "\n>>> %s\n" "{}"; cat "{}"' \; > ./.snapshot.txt
+
+.PHONY: restore
+restore:
+	@echo "Restoring files from $(SNAPSHOT) into $(SCRIPT_DIR)"
+	@awk -v base_dir="$(SCRIPT_DIR)" '\
+		function get_dir(path,  n, parts, dir) {\
+			n = split(path, parts, "/");\
+			dir = parts[1];\
+			for (i = 2; i < n; i++) dir = dir "/" parts[i];\
+			return (n > 1) ? dir : ".";\
+		}\
+		function remove_last_blank_line(file,   cmd, last) {\
+			cmd = "tail -n 1 '\''" file "'\''";\
+			cmd | getline last;\
+			close(cmd);\
+			if (last == "") {\
+				cmd = "sed -i \"\" -e '\''$$d'\'' '\''" file "'\''";\
+				system(cmd);\
+			}\
+		}\
+		BEGIN { out = ""; first = 1 }\
+		/^>>> / {\
+			if (!first && out != "") {\
+				close(out);\
+				remove_last_blank_line(out);\
+			}\
+			first = 0;\
+			relpath = substr($$0, 5);\
+			gsub(/^[.]\//, "", relpath);\
+			dir = get_dir(relpath);\
+			system("mkdir -p '\''" base_dir "/" dir "'\''");\
+			out = base_dir "/" relpath;\
+			system("> '\''" out "'\''");\
+			next;\
+		}\
+		{ if (out != "") print >> out }\
+		END {\
+			if (out != "") {\
+				close(out);\
+				remove_last_blank_line(out);\
+			}\
+		}\
+	' "$(SNAPSHOT)"
 
 ## ---------- Local Development ----------
 .PHONY: dev-init
