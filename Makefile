@@ -34,13 +34,12 @@ dev-init:  ## Initialize development environment
 .PHONY: build
 build:  ## Build and run application
 	python3 -m pip install uv && \
-	python3 -m uv sync --frozen --no-cache
+	python3 -m uv sync --frozen --no-cache && \
+	.venv/bin/fastapi run entrypoint.py
 
 .PHONY: run
 run:  ## Run application
-	python3 -m pip install uv && \
-	python3 -m uv sync --frozen --no-cache && \
-	.venv/bin/fastapi run entrypoint.py
+	uv run entrypoint.py
 
 .PHONY: run-fake-llm
 run-fake-llm:  ## Run fake LLM application
