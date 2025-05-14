@@ -63,7 +63,7 @@ class BaseValidator(ABC):
                     validated = MessagesItem.model_validate(item)
                 except ValidationError as ve:
                     return {
-                        "status": "fail",
+                        "status": "failed",
                         "errors": ve.errors(),
                         "validator": self.validator_name
                     }
@@ -73,17 +73,17 @@ class BaseValidator(ABC):
             self.report_stage(f"complete ({time.time() - start:.2f}s)")
             if errors:
                 return {
-                    "status": "fail",
+                    "status": "failed",
                     "errors": [e.model_dump() if hasattr(e, "model_dump") else e.dict() for e in errors],
                     "validator": self.__class__.__name__
                 }
             return {
-                "status": "pass",
+                "status": "passed",
                 "validator": self.__class__.__name__
             }
         except Exception as e:
             return {
-                    "status": "fail",
+                    "status": "failed",
                     "errors": str(e),
                     "validator": self.__class__.__name__
                 }

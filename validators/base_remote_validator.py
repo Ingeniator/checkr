@@ -83,7 +83,7 @@ class BaseRemoteValidator(BaseValidator):
             )]
 
         result = await resp.json()
-        status = result.get("status", "pass" if resp.status == 200 else "fail")
+        status = result.get("status", "passed" if resp.status == 200 else "failed")
         raw_errors = result.get("errors", [])
 
         self.report_stage("processing response")
@@ -91,7 +91,7 @@ class BaseRemoteValidator(BaseValidator):
         # Give time for pending tasks (Pyodide safety)
         await asyncio.sleep(0)
 
-        if status == "pass":
+        if status == "passed":
             return []
 
         details: list[ValidationErrorDetail] = []

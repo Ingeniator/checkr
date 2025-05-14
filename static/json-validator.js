@@ -356,7 +356,7 @@ class JsonValidator extends HTMLElement {
                               output_result = await v.validate(input_data)
                           except Exception as e:
                               output_result = {
-                                  "status": "fail",
+                                  "status": "failed",
                                   "errors": traceback.format_exc() + str(e),
                                   "validator": v.__class__.__name__ if v else "unknown"
                               }
@@ -369,11 +369,11 @@ class JsonValidator extends HTMLElement {
         const result = JSON.parse(output);
         results.push({ validator: url.split('/').pop(), result });
 
-        // ✅ Simple check: if result contains "fail" or "missing", assume it failed
+        // ✅ Simple check: if result contains "failed" or "missing", assume it failed
         const resultStr = JSON.stringify(result).toLowerCase();
         if (
-          result.status === "fail" ||
-          resultStr.includes('"status":"fail"') ||
+          result.status === "failed" ||
+          resultStr.includes('"status":"failed"') ||
           resultStr.includes('"errors":')  // sometimes helpful
         ) {
           allPassed = false;

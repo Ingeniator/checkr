@@ -15,12 +15,12 @@
         }
     ],
     "expect": {
-      "ChatStructureValidator": "pass",
-      "DeduplicationValidator": "pass",
-      "LinkAvailabilityValidator": "pass",
-      "LanguageConsistencyValidator": "pass",
-      "DialogBalanceValidator": "pass",
-      "QuantitySizeValidator": "fail",
-      "GuardrailComplianceValidator": "pass"
+      "ChatStructureValidator": "passed",
+      "DeduplicationValidator": "passed",
+      "LinkAvailabilityValidator": "passed",
+      "LanguageConsistencyValidator": "passed",
+      "DialogBalanceValidator": "passed",
+      "QuantitySizeValidator": "failed",
+      "GuardrailComplianceValidator": "passed"
     }
   }

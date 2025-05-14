@@ -75,7 +75,7 @@ class BaseRemoteValidatorPerItem(BaseValidator):
             status = result.get("status")
             raw_errs = result.get("errors", [])
 
-            if status == "fail":
+            if status == "failed":
                 # Wrap each returned error detail
                 for err in raw_errs:
                     if isinstance(err, dict):

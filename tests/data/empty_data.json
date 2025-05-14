@@ -1,12 +1,12 @@
 {
     "input": {},
     "expect": {
-      "ChatStructureValidator": "fail",
-      "DeduplicationValidator": "pass",
-      "LinkAvailabilityValidator": "pass",
-      "LanguageConsistencyValidator": "pass",
-      "QuantitySizeValidator": "fail",
-      "DialogBalanceValidator": "fail",
-      "GuardrailComplianceValidator": "pass"
+      "ChatStructureValidator": "failed",
+      "DeduplicationValidator": "passed",
+      "LinkAvailabilityValidator": "passed",
+      "LanguageConsistencyValidator": "passed",
+      "QuantitySizeValidator": "failed",
+      "DialogBalanceValidator": "failed",
+      "GuardrailComplianceValidator": "passed"
     }
   }

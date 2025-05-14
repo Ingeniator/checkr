@@ -74,7 +74,7 @@ async def _validate(gates: [], dataset: list[DataItem], options: dict[str, Any],
         raw_dataset = [item.model_dump() if hasattr(item, "model_dump") else item.dict() for item in dataset]
         result = await validator.validate(raw_dataset)
         logger.debug(result)
-        if result["status"] == "fail":
+        if result["status"] == "failed":
             all_errors.extend(result["errors"])
     print(all_errors)
     logger.debug(f"validate_dataset {all_errors}")
