@@ -5,7 +5,7 @@ class AppSettings(BaseSettings):
     root_path: str = "/validators"
     debug: bool = False
     host: str = "0.0.0.0"
-    port: int = 5005
+    port: int = 5000
 
     # SSL
     http_verify_ssl: bool = True
