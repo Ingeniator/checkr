@@ -3,15 +3,16 @@
 <head>
   <title>JSON-Dataset Validation Playground</title>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
-  <script type="module" src="./static/json-validator.js"></script>
+  <script type="module" src="/validators/static/json-validator.js"></script>
 </head>
 <body>
   <h1>JSON-Dataset Validation Playground</h1>
 
   <json-validator
-    validator-source="/api/v0/validators",
-    submit-url="/api/v0/submit">
+    validator-source="/validators/api/v0",
+    submit-url="/validators/api/v0/submit">
   </json-validator>
-  <div><a href="/docs">API Documentation</a></div>
+  <div><a href="/validators/playground">Playground</a></div>
+  <div><a href="/validators/docs">API Documentation</a></div>
 </body>
 </html>

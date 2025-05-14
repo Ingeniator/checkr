@@ -160,7 +160,7 @@ class JsonValidator extends HTMLElement {
       validatorList.innerHTML = "📦 Fetching validator list...";
       await this.nextIdle();
       try {
-        const res = await fetch(backendUrl);
+        const res = await fetch(backendUrl + "/list");
         if (!res.ok) throw new Error("Backend API error");
 
         const validators = await res.json(); // should be an array of ValidatorDetail
@@ -168,7 +168,7 @@ class JsonValidator extends HTMLElement {
         const enriched = validators.map(v => ({
           name: v.source.split('/').pop(),
           folder: v.source.split('/').slice(-2, -1)[0],
-          url: "/api/v0/validators/raw/" + v.source,
+          url: backendUrl + "/raw/" + v.source,
           title: v.title,
           stage: v.stage,
           description: v.description,
@@ -430,7 +430,7 @@ class JsonValidator extends HTMLElement {
       });
 
       const text = await res.text();
-      this.output.textContent = `✅ Submitted!\nResponse:\n${text}\nYou can see results here: https://webhook-test.com/payload/998b0c41-140f-447d-9ee0-b41576baf530`;
+      this.output.textContent = `✅ Submitted!\nResponse:\n${text}`;
     } catch (e) {
       this.output.textContent = `❌ Submit failed: ${e}`;
     }

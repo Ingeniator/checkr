@@ -1,6 +1,6 @@
 """
 ---
-name: Chat Structure Validator
+title: Chat Structure Validator
 description: Checks message roles and order in a chat-style dataset.
 tags: [structure, pydantic, schema, gate1]
 ---
@@ -11,7 +11,7 @@ from typing import Literal
 from validators.base_validator import BaseValidator, ValidationErrorDetail
 
 class Message(BaseModel):
-    role: Literal["user", "assistant", "system"]
+    role: Literal["user", "assistant", "system", "function"]
     content: str
 
 class ChatSample(BaseModel):

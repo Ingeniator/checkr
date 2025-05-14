@@ -39,7 +39,7 @@ class GithubValidatorProvider(BaseValidatorProvider):
 
     async def _walk_tree(self) -> list[dict]:
         url = f"{self._api_url(f'git/trees/{self.ref}')}?recursive=1"
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=settings.http_verify_ssl) as client:
             r = await client.get(url, headers=self.headers)
             r.raise_for_status()
             tree = r.json().get("tree", [])
@@ -54,7 +54,7 @@ class GithubValidatorProvider(BaseValidatorProvider):
         blob_url = item.get("url")
         if not blob_url:
             return None
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=settings.http_verify_ssl) as client:
             r = await client.get(blob_url, headers=self.headers)
             if r.status_code != 200:
                 return None
@@ -73,7 +73,7 @@ class GithubValidatorProvider(BaseValidatorProvider):
 
     async def _fetch_file_content(self, file_path: str) -> str:
         raw_url = self._raw_url(file_path)
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=settings.http_verify_ssl) as client:
             r = await client.get(raw_url)
             r.raise_for_status()
             return r.text

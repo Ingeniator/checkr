@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Literal, Any
 
 from enum import Enum
@@ -10,11 +10,21 @@ class ValidatorType(str, Enum):
     base = "base"
 
 class Message(BaseModel):
-    role: Literal["user", "assistant", "system"]
+    role: Literal["user", "assistant", "system", "function"]
     content: str
 
 class DataItem(BaseModel):
     messages: list[Message]
+
+    @model_validator(mode='before')
+    @classmethod
+    def normalize_input(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "messages" in data:
+            return data
+
+        if isinstance(data, list) and all(isinstance(item, dict) for item in data):
+            return { "messages": data}
+        raise ValueError("Expected either {'messages': [...]} or list of  dicts")
 
 class DatasetValidationRequest(BaseModel):
     dataset: list[DataItem]

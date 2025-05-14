@@ -2,9 +2,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class AppSettings(BaseSettings):
     app_name: str = "Checkr"
+    root_path: str = "/validators"
     debug: bool = False
     host: str = "0.0.0.0"
     port: int = 5005
+
+    # SSL
+    http_verify_ssl: bool = True
 
     # Logging
     log_level: str = "INFO"

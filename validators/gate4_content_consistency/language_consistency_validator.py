@@ -1,6 +1,6 @@
 """
 ---
-name: Language & Encoding Consistency Validator
+title: Language & Encoding Consistency Validator
 description: Checks that request and response messages are in the same, valid language.
 tags: [language, encoding, gate4]
 options:

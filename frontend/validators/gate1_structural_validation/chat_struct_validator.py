@@ -11,7 +11,7 @@ from typing import Literal
 from validators.base_validator import BaseValidator, ValidationErrorDetail
 
 class Message(BaseModel):
-    role: Literal["user", "assistant", "system"]
+    role: Literal["user", "assistant", "system", "function"]
     content: str
 
 class ChatSample(BaseModel):

@@ -3,7 +3,7 @@ name = "checkr"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "asyncio>=3.4.3",
     "better-profanity>=0.7.0",
@@ -17,6 +17,7 @@ dependencies = [
     "python-gitlab>=5.6.0",
     "pyyaml>=6.0.2",
     "scrubadub>=2.0.1",
+    "srsly>=2.5.1",
     "starlette>=0.46.1",
     "structlog>=25.2.0",
     "uvicorn>=0.34.0",

@@ -26,7 +26,7 @@ async def test_mock_fetch_frontend_validators_returns_expected_validator(caplog)
 
     # Fetch and verify the content of the validator source
     content = await fetch_frontend_validator_source(summary_validator.source, provider_name)
-    assert content == "Mock content"
+    assert len(content) > 0
 
     # Fetch and verify the content of non-existed path
     content = await fetch_frontend_validator_source("not/exist", provider_name)

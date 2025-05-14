@@ -1,6 +1,6 @@
 """
 ---
-name: Link Availability Validator
+title: Link Availability Validator
 description: Checks if any links in message contents are reachable (status 200).
 tags: [availability, links, gate3]
 ---

@@ -1,6 +1,6 @@
 """
 ---
-name: Data Balance & Distribution Validator (Dialogs)
+title: Data Balance & Distribution Validator (Dialogs)
 description: Checks if the dialogs dataset is balanced by analyzing dialog length and role distribution.
 tags: [data, balance, distribution, gate5]
 options:

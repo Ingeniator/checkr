@@ -1,6 +1,6 @@
 """
 ---
-name: Quantity / Size Check Validator
+title: Quantity / Size Check Validator
 description: Checks that the dataset has enough dialogs for meaningful training.
 tags: [quantity, size, gate6]
 options:

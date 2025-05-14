@@ -22,7 +22,7 @@ async def init_validators(app: FastAPI):
         detail.source: cls for cls, detail in validators
     }
     # warm-up
-    logger.info("Warming-up: Getting frontend validators")
+    logger.info(f"Warming-up: Getting frontend validators (provider={settings.provider_name})")
     frontend_validators = await fetch_frontend_validators(settings.provider_name)
 
 async def get_list_dataset_validators(request_: Request):
@@ -30,11 +30,11 @@ async def get_list_dataset_validators(request_: Request):
     return frontend_validators + request_.app.state.public_backend_validators_details
 
 # === Endpoints ===
-@router.get("/validators", response_model=list[ValidatorDetail])
+@router.get("/list", response_model=list[ValidatorDetail])
 async def list_dataset_validators(request_: Request):
     return await get_list_dataset_validators(request_)
 
-@router.get("/validators/info/{source:path}", response_model=ValidatorDetail)
+@router.get("/info/{source:path}", response_model=ValidatorDetail)
 async def get_validator_detail(source: str, request_: Request):
     all_validators = await get_list_dataset_validators(request_)
     for validator in all_validators:
@@ -42,12 +42,12 @@ async def get_validator_detail(source: str, request_: Request):
             return validator
     raise HTTPException(status_code=404, detail="Validator not found")
 
-@router.get("/validators/raw/base")
+@router.get("/raw/base")
 async def get_base_validators_source(request_: Request):
     logger.info("fetch_frontend_base_validators_source")
     return await fetch_frontend_base_validators_source(settings.provider_name)
 
-@router.get("/validators/raw/{source:path}", response_class=PlainTextResponse)
+@router.get("/raw/{source:path}", response_class=PlainTextResponse)
 async def get_validator_source(source: str, request_: Request):
     all_validators = await get_list_dataset_validators(request_)
     for validator in all_validators:
@@ -92,4 +92,9 @@ async def validate_dataset(source: str, request: DatasetValidationRequest, reque
 async def validate_dataset_on_several_gates(request: DatasetGroupValidationRequest, request_: Request):
     return await _validate(request.gates, request.dataset, request.options, request_)
 
-    
+@router.post("/submit")
+async def submit(request: Request):
+    body = await request.json()
+    print("Received body:", body)
+    return {"status": "received", "body": body}
+

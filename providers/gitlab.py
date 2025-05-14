@@ -15,7 +15,8 @@ class GitlabValidatorProvider(BaseValidatorProvider):
     def __init__(self, config_path: str = settings.provider_config_path):
         self.source_prefix = "gitlab"
         self.config = load_and_expand_yaml(config_path)[self.source_prefix]
-        self.gl = gitlab.Gitlab(self.config["url"], private_token=self.config["private_token"])
+        logger.debug(self.config)
+        self.gl = gitlab.Gitlab(self.config["url"], private_token=self.config["private_token"], ssl_verify=settings.http_verify_ssl)
         self.project = self.gl.projects.get(self.config["project_id"])
         self.ref = self.config.get("ref", "main")
         self.base_path = self.config.get("path", "")
@@ -102,7 +103,7 @@ class GitlabValidatorProvider(BaseValidatorProvider):
         if len(self.base_validators) > 0:
             base_validators = self.base_validators
         else:
-            base_validators = await self._fetch_validators(base=True)
+            base_validators = await self._fetch_validators(include_base_validator=True)
         result = {}
         for base_validator in self.base_validators:
             file_path = base_validator.source

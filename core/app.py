@@ -1,7 +1,7 @@
 
 # core/app.py
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
-    app = FastAPI(title=settings.app_name, docs_url="/docs", debug=settings.debug, lifespan=lifespan)
+    app = FastAPI(title=settings.app_name, root_path=settings.root_path, debug=settings.debug, lifespan=lifespan)
     app.include_router(validator_router, prefix="/api/v0")
     # Add Logging Middleware
     app.add_middleware(LoggingMiddleware)
@@ -37,10 +37,14 @@ def create_app() -> FastAPI:
 
     # Serve static files (e.g., CSS, JS, images) at /static
     app.mount("/static", StaticFiles(directory="static"), name="static")
-    # Serve index.html at root
+    # Serve index.html as playground
+    @app.get("/playground", include_in_schema=False)
+    async def playground():
+        return FileResponse(Path("static/index.html"))
+
     @app.get("/", include_in_schema=False)
     async def root():
-        return FileResponse(Path("static/index.html"))
+        return RedirectResponse(url=f"{settings.root_path}/playground", status_code=302)
 
     # Expose metrics endpoint
     @app.get("/metrics")

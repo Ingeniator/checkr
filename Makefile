@@ -24,12 +24,16 @@ help:  ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-15s$(RESET) %s\n", $$1, $$2}'
 
 
+.PHONY: snapshot
+snapshot:
+	 find . -type f -not -path './dev/*' -not -path './uv.lock' -not -path './.git/*' -not -path '**/__pycache__/*' -not -path '**/.DS_Store' -not -path './.venv/*' -not -path './.*' -exec bash -c 'printf "\n>>> %s\n" "{}"; cat "{}"' \; > ./.snapshot.txt
+
 ## ---------- Local Development ----------
 .PHONY: dev-init
 dev-init:  ## Initialize development environment
-	uv venv
-	uv pip install --dev
-	uvx pre-commit install
+	python3 -m uv venv
+	python3 -m uv pip install --dev
+	python3 -m uv run pre-commit install
 
 .PHONY: build
 build:  ## Build and run application
@@ -39,31 +43,31 @@ build:  ## Build and run application
 
 .PHONY: run
 run:  ## Run application
-	uv run entrypoint.py
-
-.PHONY: run-fake-llm
-run-fake-llm:  ## Run fake LLM application
-	uv run fake_llm_entrypoint.py
+	python3 -m uv run entrypoint.py
 
 ## ---------- Code Quality ----------
 
 .PHONY: lint
 lint:  ## Run linting (Python example)
-	uvx ruff check --fix .
+	python3 -m uv run ruff check --fix .
 
 .PHONY: commit
 commit:  ## Auto-format code (Python example)
-	uvx --from commitizen cz c
+	python3 -m uv run cz c
+
+.PHONY: push
+push: ## make commit using commitizen
+	git add . && make commit && git push
 
 ## ---------- Testing ----------
 
 .PHONY: test
 test:  ## Run tests
-	uv run pytest -s
+	python3 -m uv run pytest -s
 
 .PHONY: test-coverage
 test-coverage:  ## Run tests with coverage report
-	pytest --cov=.
+	python3 -m uv run pytest --cov=.
 
 ## ---------- Deployment ----------
 
