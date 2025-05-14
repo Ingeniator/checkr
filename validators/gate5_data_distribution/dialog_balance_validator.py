@@ -7,18 +7,18 @@ options:
   min_length: 2
   max_length: 20
   min_user_assistant_ratio: 0.5
-  max_user_assistant_ratio: 1.5
+  max_user_assistant_ratio: 1
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
 import base64
 
 class DialogBalanceValidator(BaseValidator):
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
 
         # Extract configurable options with defaults
@@ -40,14 +40,14 @@ class DialogBalanceValidator(BaseValidator):
         # Convert dialogs into a DataFrame with one row per dialog
         dialogs = []
         for i, item in enumerate(data):
-            dialog = item.get("messages", [])
+            dialog = item.messages
             if not dialog:
                 continue
             dialogs.append({
                 "dialog_index": i,
                 "length": len(dialog),
-                "user_count": sum(1 for msg in dialog if msg.get("role", "").lower() == "user"),
-                "assistant_count": sum(1 for msg in dialog if msg.get("role", "").lower() == "assistant")
+                "user_count": sum(1 for msg in dialog if msg.role.lower() == "user"),
+                "assistant_count": sum(1 for msg in dialog if msg.role.lower() == "assistant")
             })
         
         if not dialogs:

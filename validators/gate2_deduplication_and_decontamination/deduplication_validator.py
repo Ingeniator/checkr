@@ -6,19 +6,18 @@ tags: [decontamination, deduplication, gate2]
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import json
 
 class DeduplicationValidator(BaseValidator):
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         seen = {}
         errors: list[ValidationErrorDetail] = []
 
         for i, item in enumerate(data):
             # Convert the "messages" list into a JSON string for hashing
-            messages = item.get("messages")
             try:
-                key = json.dumps(messages, sort_keys=True)
+                key = json.dumps(item.messages), sort_keys=True)
             except (TypeError, ValueError) as e:
                 errors.append(ValidationErrorDetail(
                     index=i,

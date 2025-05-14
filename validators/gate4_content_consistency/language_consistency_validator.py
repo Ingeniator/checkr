@@ -9,7 +9,7 @@ options:
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 from langdetect import detect, DetectorFactory
 import re
 
@@ -33,7 +33,7 @@ class LanguageConsistencyValidator(BaseValidator):
         except Exception:
             return "unknown"
 
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
 
         # Optionally, use a global expected language (if set)
@@ -43,14 +43,14 @@ class LanguageConsistencyValidator(BaseValidator):
             expected_lang = None
 
         for i, item in enumerate(data):
-            messages = item.get("messages", [])
+            messages = item.messages
             if not messages:
                 continue
 
             try:
                 # Normalize roles and get content
-                roles = [m.get("role", "").strip().lower() for m in messages]
-                contents = [m.get("content", "") for m in messages]
+                roles = [msg.role.strip().lower() for msg in messages]
+                contents = [msg.content for msg in messages]
 
                 # Detect languages and store a snippet for verbose output
                 detected = []

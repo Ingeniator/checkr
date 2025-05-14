@@ -7,7 +7,7 @@ tags: [availability, links, gate3]
 """
 
 import re
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 
 
 URL_PATTERN = re.compile(r"https?://[^\s]+")
@@ -23,10 +23,10 @@ except ImportError:
     JsException = Exception
 
 class LinkAvailabilityValidator(BaseValidator):
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
        
-        total = sum(len(item.get("messages", [])) for item in data)
+        total = sum(len(item.messages)) for item in data)
 
         # Check if js.safeFetch exists; fallback to js.fetch
         if js:
@@ -45,10 +45,8 @@ class LinkAvailabilityValidator(BaseValidator):
         current = 0
 
         for i, sample in enumerate(data):
-            messages = sample.get("messages", [])
-            for j, msg in enumerate(messages):
-                content = msg.get("content", "")
-                urls = URL_PATTERN.findall(content)
+            for j, msg in enumerate(sample.messages):
+                urls = URL_PATTERN.findall(msg.content)
 
                 for url in urls:
                     try:

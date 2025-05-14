@@ -6,7 +6,7 @@ tags: [guardrails, toxicity, pii, safety, gate8]
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import re
 
 # Attempt to import better_profanity and scrubadub
@@ -32,19 +32,17 @@ except ImportError:
     scrubadub = None
 
 class GuardrailComplianceValidator(BaseValidator):
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
-        total = sum(len(item.get("messages", [])) for item in data)
+        total = sum(len(item.messages)) for item in data)
         current = 0
         for i, item in enumerate(data):
-            messages = item.get("messages", [])
-            for j, msg in enumerate(messages):
-                content = msg.get("content", "")
-                snippet = content[:30] + ("..." if len(content) > 30 else "")
+            for j, msg in enumerate(item.messages):
+                snippet = msg.content[:30] + ("..." if len(msg.content) > 30 else "")
                 field_path = f"messages[{j}].content"
                 # Toxicity check using better-profanity
                 if profanity:
-                    if profanity.contains_profanity(content):
+                    if profanity.contains_profanity(msg.content):
                         errors.append(ValidationErrorDetail(
                             index=i,
                             field=field_path,
@@ -62,8 +60,8 @@ class GuardrailComplianceValidator(BaseValidator):
                 # PII detection using scrubadub
                 if scrubadub:
                     # scrubadub.clean() returns a cleaned version of the text.
-                    cleaned = scrubadub.clean(content)
-                    if cleaned != content:
+                    cleaned = scrubadub.clean(msg.content)
+                    if cleaned != msg.content:
                         errors.append(ValidationErrorDetail(
                             index=i,
                             field=field_path,
@@ -79,7 +77,7 @@ class GuardrailComplianceValidator(BaseValidator):
                     ))
                 
                 # Example check: basic formatting issue (e.g., excessive markdown)
-                if re.search(r"([*_]{3,})", content):
+                if re.search(r"([*_]{3,})", msg.content):
                     errors.append(ValidationErrorDetail(
                         index=i,
                         field=field_path,

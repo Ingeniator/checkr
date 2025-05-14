@@ -7,7 +7,7 @@ tags: [remote]
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import json
 import asyncio
 
@@ -33,7 +33,7 @@ class BaseRemoteValidatorPerItem(BaseValidator):
         super().__init__(*args, **kwargs)
         self.endpoint = getattr(self, "endpoint", None) or self.options.get("endpoint")
 
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         if not pyfetch:
             raise RuntimeError(f"{self.validator_name} requires pyodide HTTP support (pyfetch).")
 

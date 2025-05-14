@@ -59,6 +59,6 @@
       "LanguageConsistencyValidator": "fail",
       "QuantitySizeValidator": "fail",
       "GuardrailComplianceValidator": "fail",
-      "DialogBalanceValidator": "pass"
+      "DialogBalanceValidator": "fail"
     }
   }

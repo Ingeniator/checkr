@@ -7,7 +7,7 @@ tags: [remote]
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import json
 import asyncio
 
@@ -56,7 +56,7 @@ class BaseRemoteValidator(BaseValidator):
         super().__init__(*args, **kwargs)
         self.endpoint = getattr(self, "endpoint", None) or self.options.get("endpoint")
 
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         if not self.endpoint:
             raise ValueError(f"No 'endpoint' provided in options for {self.validator_name}.")
 

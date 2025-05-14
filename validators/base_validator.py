@@ -9,13 +9,28 @@ tags: [abstract]
 
 from abc import ABC, abstractmethod
 from typing import Any
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, ValidationError
 import time
 
 try:
     from pyodide.ffi import JsProxy
 except ImportError:
     JsProxy = None  # We're not in Pyodide
+
+class Message(BaseModel):
+    role: str
+    content: str
+
+class MessagesItem(BaseModel):
+    messages: list[Message]
+
+    @field_validator('messages', mode='before')
+    @classmethod
+    def normalize_messages(cls, value):
+        # Accepts either [{"role": ..., "content": ...}, ...] or {"messages": [...]}
+        if isinstance(value, list) and all(isinstance(item, dict) and 'role' in item and 'content' in item for item in value):
+            return value
+        raise ValueError("Expected list of message dicts")
 
 class ValidationErrorDetail(BaseModel):
     error: str
@@ -30,18 +45,31 @@ class BaseValidator(ABC):
         self.progress_callback = progress_callback
         self.validator_name = self.__class__.__name__
 
-    async def validate(self, js_data: "JsProxy | list[dict[str, Any]]") -> dict[str, Any]:
+    async def validate(self, js_data: "JsProxy | list[Any]]") -> dict[str, Any]:
         """
         Entry point for Pyodide: receives JsProxy or Python list
         """
         if hasattr(js_data, "to_py"):
-            data = js_data.to_py()
+            raw_data = js_data.to_py()
         else:
-            data = js_data
+            raw_data = js_data
         try:
             start = time.time()
             self.report_stage("starting")
-            errors = await self._validate(data)
+
+            dataset = []
+            for item in raw_data:
+                try:
+                    validated = MessagesItem.model_validate(item)
+                except ValidationError as ve:
+                    return {
+                        "status": "fail",
+                        "errors": ve.errors(),
+                        "validator": self.validator_name
+                    }
+                dataset.append(validated)
+
+            errors = await self._validate(dataset)
             self.report_stage(f"complete ({time.time() - start:.2f}s)")
             if errors:
                 return {
@@ -84,7 +112,7 @@ class BaseValidator(ABC):
                 pass
 
     @abstractmethod
-    async def _validate(self, data: list[dict[str, Any]]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         """
         Implement this in subclasses. Must return a error array if any
         """

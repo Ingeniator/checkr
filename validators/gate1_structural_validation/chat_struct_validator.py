@@ -8,7 +8,7 @@ tags: [structure, pydantic, schema, gate1]
 
 from pydantic import BaseModel, ValidationError, field_validator
 from typing import Literal
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 
 class Message(BaseModel):
     role: Literal["user", "assistant", "system", "function"]
@@ -32,13 +32,13 @@ class ChatSample(BaseModel):
 
 class ChatStructureValidator(BaseValidator):
 
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]: 
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]: 
         errors: list[ValidationErrorDetail] = []
         if not data:
             return [ValidationErrorDetail(error="Empty array detected")]
         for i, item in enumerate(data):
             try:
-                ChatSample(**item)
+                ChatSample(**item.model_dump())
             except ValidationError as e:
                 errors.append(
                     ValidationErrorDetail(

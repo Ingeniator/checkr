@@ -9,10 +9,10 @@ options:
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail
+from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 
 class QuantitySizeValidator(BaseValidator):
-    async def _validate(self, data: list[dict]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
         # Minimum number of dialogs required for training; default is 50.
         min_samples = self.options.get("min_samples", 50)
@@ -27,7 +27,7 @@ class QuantitySizeValidator(BaseValidator):
         min_turns = self.options.get("min_turns", 2)
         for i, item in enumerate(data):
             # Assuming each dialog is stored under the key "messages"
-            dialog = item.get("messages", [])
+            dialog = item.messages
             if len(dialog) < min_turns:
                 errors.append(ValidationErrorDetail(
                     index=i,
