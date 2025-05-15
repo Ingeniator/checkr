@@ -4,7 +4,7 @@ title: Configurable G-Eval Validator
 description: Uses LLM as a judge to evaluate assistant responses with a customizable prompt.
 tags: [semantic, remote, geval, pyodide, dynamic]
 options:
-  quality_definition: "Evaluate the overall quality of the assistant's reply, based on how helpful, clear, relevant, and well-phrased it is."
+  quality_definition: "Evaluate the overall quality of the assistant reply, based on how helpful, clear, relevant, and well-phrased it is."
   score_title: "Custom G-Eval Score"
   score_code: "low_geval_score"
   score_threshold: 70
@@ -32,9 +32,6 @@ class ConfigurableRemoteGEvalValidator(BaseRemoteGEvalValidator):
             f"Assistant reply:\n{{assistant}}\n\n"
             f"Only respond with a number from 1 to 100."
         )
-
-        options.setdefault("score_title", "G-Eval Score")
-        options.setdefault("score_code", "low_score")
 
         kwargs["options"] = options
 
