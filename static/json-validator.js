@@ -36,13 +36,11 @@ class JsonValidator extends HTMLElement {
         }
         textarea.validator-options {
           width: 100%;
-          min-height: 100px;
+          min-height: 60px;
           max-height: 600px;
           resize: none;
           overflow: hidden;
           font-family: monospace;
-          font-size: 1rem;
-          line-height: 1.4;
           box-sizing: border-box;
           padding: 8px;
         }
