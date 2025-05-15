@@ -15,11 +15,9 @@ SOURCE_PREFIX="backend"
 
 def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], ValidatorDetail]]:
     results: List[Tuple[Type[BaseValidator], ValidatorDetail]] = []
-
+    seen_classes: set[Tuple[str, str]] = set()  # (class name, module name)
     for file_path in VALIDATORS_PATH.rglob("*.py"):
-        if file_path.name == "base_validator.py":
-            continue
-        
+
         rel_path = file_path.relative_to(VALIDATORS_PATH)
         module_name = f"{VALIDATORS_PACKAGE}." + ".".join(rel_path.with_suffix("").parts)
 
@@ -40,6 +38,11 @@ def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], Valid
         for attr in dir(module):
             obj = getattr(module, attr)
             if isinstance(obj, type) and issubclass(obj, BaseValidator) and obj is not BaseValidator:
+                class_id = (obj.__name__, obj.__module__)
+                if class_id in seen_classes:
+                    logger.debug(f"⚠️ Duplicate validator skipped: {obj.__name__} from {file_path}")
+                    continue
+                seen_classes.add(class_id)
                 raw_tags = front.get("tags", [])
                 tags = raw_tags if isinstance(raw_tags, list) else [raw_tags] if raw_tags else []
                 validator_type = front.get("type", ValidatorType.dataset_backend)
