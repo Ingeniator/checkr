@@ -1,5 +1,4 @@
 import { initPyodide } from './pyodide-loader.js';
-import yaml from 'https://cdn.jsdelivr.net/npm/js-yaml@4/+esm';
 
 class JsonValidator extends HTMLElement {
   constructor() {

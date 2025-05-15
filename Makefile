@@ -82,7 +82,7 @@ dev-init:  ## Initialize development environment
 	python3 -m uv run pre-commit install
 
 .PHONY: build
-build:  ## Build and run application
+build:  fetch-static-js ## Build and run application
 	python3 -m pip install uv && \
 	python3 -m uv sync --frozen --no-cache && \
 	.venv/bin/fastapi run entrypoint.py
@@ -90,6 +90,15 @@ build:  ## Build and run application
 .PHONY: run
 run:  ## Run application
 	python3 -m uv run entrypoint.py
+
+PHONY: fetch-pyodide-static-js
+fetch-static-js:
+	@echo "📥 Downloading JS assets..."
+	@mkdir -p static/pyodide
+	@cd static/pyodide && \
+	for file in python_stdlib.zip pyodide.asm.wasm pyodide.js pyodide-lock.json annotated_types-0.6.0-py3-none-any.whl typing_extensions-4.11.0-py3-none-any.whl pyodide.asm.js pydantic-2.10.5-py3-none-any.whl pydantic_core-2.27.2-cp312-cp312-pyodide_2024_0_wasm32.whl ; do \
+		curl -LO https://cdn.jsdelivr.net/pyodide/v0.27.5/full/$$file; \
+	done
 
 ## ---------- Code Quality ----------
 
