@@ -3,10 +3,11 @@
 title: Remote Validator Per Item
 type: base
 description: It sends each item separately to a remote backend for validation, with native progress reporting.
-tags: [remote]
+tags: [abstract, remote]
 ---
 """
 
+from abc import ABC
 from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import json
 import asyncio
@@ -26,7 +27,7 @@ try:
 except ImportError:
     pyfetch = None
 
-class BaseRemoteValidatorPerItem(BaseValidator):
+class BaseRemoteValidatorPerItem(BaseValidator, ABC):
     endpoint: str | None = None
     
     def __init__(self, *args, **kwargs):

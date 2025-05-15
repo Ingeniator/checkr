@@ -3,10 +3,11 @@
 title: Base Remote Validator
 type: base
 description: Delegates validation to a remote backend service and wraps its errors.
-tags: [remote]
+tags: [abstract, remote]
 ---
 """
 
+from abc import ABC
 from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import json
 import asyncio
@@ -49,7 +50,7 @@ except ImportError:
         return FakeResponse(resp)
 
 
-class BaseRemoteValidator(BaseValidator):
+class BaseRemoteValidator(BaseValidator, ABC):
     endpoint: str | None = None
 
     def __init__(self, *args, **kwargs):
