@@ -12,19 +12,25 @@ from validators.base_validator import BaseValidator, ValidationErrorDetail, Mess
 import matplotlib.pyplot as plt
 import html, re, io, base64
 from openai import AsyncOpenAI
+from core.config import settings
+import yaml
+from utils.yaml import load_and_expand_yaml
 
 class BaseGEvalValidator(BaseValidator, ABC):
     prompt_template: str = ""
     score_title: str = "Score"
     score_code: str = "low_score"
     score_regex: str = r"\b(100|[1-9][0-9]?)(?:\.0)?\b"
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        config_path = settings.llm_config_path
+        self.config = load_and_expand_yaml(config_path)['geval']
+
         self.client = AsyncOpenAI(
-            api_key=self.options.get("api_key", None),
-            base_url=self.options.get("api_base", None)
+            api_key=self.config.get("api_key", None),
+            base_url=self.config.get("api_base", None)
         )
 
     def format_prompt(self, user: str, assistant: str) -> str:
@@ -43,7 +49,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
     async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors = []
 
-        model = self.options.get("model", "gpt-4")
+        model = self.config.get("model", "gpt-4")
         threshold = self.options.get("score_threshold", 70)
         preview_limit = self.options.get("preview_limit", 3)
         dialog_avg_scores = []
@@ -128,7 +134,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
             response = await self.client.chat.completions.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=self.options.get("temperature", 0.0),
+                temperature=self.config.get("temperature", 0.0),
             )
             if not response or not response.choices:
                 raise ValueError("No choices returned from LLM response.")

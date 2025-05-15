@@ -4,12 +4,8 @@ title: Assistant Relevance Validator (G-Eval Style)
 description: Uses a custom OpenAI-compatible LLM as a judge to evaluate assistant responses.
 tags: [semantic, relevance, geval, gate7]
 options:
-  model: thebloke/tinyllama-1.1b-chat-v1.0 #gpt-4
   score_threshold: 70
   preview_limit: 3
-  api_key: "none"  # Optional for local
-  api_base: http://localhost:1234/v1
-  temperature: 0.0
 ---
 """
 

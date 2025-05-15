@@ -21,6 +21,9 @@ class AppSettings(BaseSettings):
     provider_config_path: str = "config/provider.yaml"
     provider_cache_ttl: int = 600 #10 min
 
+    # llm
+    llm_config_path: str = "config/llm.yaml"
+
     model_config = SettingsConfigDict(env_prefix="CHECKR_", env_file=".env", env_file_encoding="utf-8", extra='allow')
 
 # Load settings

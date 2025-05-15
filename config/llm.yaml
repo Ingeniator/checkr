@@ -1,0 +1,5 @@
+geval:
+  model: thebloke/tinyllama-1.1b-chat-v1.0 #gpt-4
+  api_key: "${GEVAL_API_KEY}"  # Optional for local
+  api_base: http://localhost:1234/v1
+  temperature: 0.0
