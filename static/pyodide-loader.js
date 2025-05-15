@@ -16,13 +16,17 @@ export async function initPyodide() {
           };
         }
       };
-      await py.loadPackage("micropip");
-      await py.runPythonAsync(`
-        import micropip
-        #await micropip.install("https://your-server/path/to/your_package_name-0.1.0-py3-none-any.whl")
-        await micropip.install("pytz>=2024.2", keep_going=True)
-        await micropip.install("pydantic<2.0", keep_going=True)
-      `);
+
+      // Here is list packages included with pyodide https://pyodide.org/en/stable/usage/packages-in-pyodide.html
+      // These packages can be loaded with pyodide.loadPackage()
+      await py.loadPackage(["pydantic"])
+
+      // Pure Python packages with wheels on PyPI can be loaded directly from PyPI with micropip.install()
+      // await py.loadPackage("micropip");
+      // await py.runPythonAsync(`
+      //   import micropip
+      //   #await micropip.install("https://your-server/path/to/your_package_name-0.1.0-py3-none-any.whl")
+      // `);
       return py;
     });
   }
