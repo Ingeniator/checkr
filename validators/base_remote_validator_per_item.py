@@ -50,7 +50,7 @@ class BaseRemoteValidatorPerItem(BaseValidator):
             self.report_progress(idx + 1, total)
 
             # Send single-item request
-            resp = await fetch_func(self.endpoint, {"dataset": [item], "index": idx, "options": self.options})
+            resp = await fetch_func(self.endpoint, {"dataset": [item.model_dump()], "index": idx, "options": self.options})
 
             # HTTP error?
             if resp.status != 200:

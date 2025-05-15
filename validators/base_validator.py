@@ -61,10 +61,10 @@ class BaseValidator(ABC):
             for item in raw_data:
                 try:
                     validated = MessagesItem.model_validate(item)
-                except ValidationError as ve:
+                except ValidationError as e:
                     return {
                         "status": "failed",
-                        "errors": ve.errors(),
+                        "errors": str(e),
                         "validator": self.validator_name
                     }
                 dataset.append(validated)

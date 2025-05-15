@@ -63,7 +63,11 @@ class BaseRemoteValidator(BaseValidator):
         self.report_stage("sending to remote")
 
         # Ensure fetch is awaited properly
-        resp = await fetch_func(self.endpoint, {"dataset": data, "options": self.options})
+        payload = {
+            "dataset": [item.model_dump() for item in data],
+            "options": self.options,
+        }
+        resp = await fetch_func(self.endpoint, payload)
 
         if resp.status != 200:
             try:
