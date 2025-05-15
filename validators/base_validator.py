@@ -9,7 +9,7 @@ tags: [abstract]
 
 from abc import ABC, abstractmethod
 from typing import Any
-from pydantic import BaseModel, field_validator, ValidationError
+from pydantic import BaseModel, field_validator, model_validator, ValidationError
 import time
 
 try:
@@ -24,13 +24,28 @@ class Message(BaseModel):
 class MessagesItem(BaseModel):
     messages: list[Message]
 
+    @model_validator(mode='before')
+    @classmethod
+    def accept_two_input_styles(cls, value):
+        # Accepts either [{"role": ..., "content": ...}, ...] or {"messages": [...]}
+        if isinstance(value, dict) and "messages" in value:
+            # Option 1: already in expected format
+            return value
+        elif isinstance(value, list) and all(isinstance(item, dict) for item in value):
+            # Option 2: a list of messages
+            return {"messages": value}
+        raise ValueError("Expected either a dict with 'messages' or a list of messages")
+
+
     @field_validator('messages', mode='before')
     @classmethod
     def normalize_messages(cls, value):
-        # Accepts either [{"role": ..., "content": ...}, ...] or {"messages": [...]}
-        if isinstance(value, list) and all(isinstance(item, dict) and 'role' in item and 'content' in item for item in value):
-            return value
-        raise ValueError("Expected list of message dicts")
+        if not isinstance(value, list):
+            raise ValueError("messages must be a list")
+        for item in value:
+            if not isinstance(item, dict) or 'role' not in item or 'content' not in item:
+                raise ValueError("Each message must be a dict with 'role' and 'content'")
+        return value
 
 class ValidationErrorDetail(BaseModel):
     error: str

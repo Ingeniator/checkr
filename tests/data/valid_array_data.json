@@ -1,0 +1,22 @@
+{
+    "input": [
+        [
+            { "role": "system", "content": "You are helpful assistant." },
+            { "role": "user", "content": "Hello, how are you doing today? I hope everything is wonderful." },
+            { "role": "assistant", "content": "Hi there! I hope everything is wonderful." }
+        ],
+        [
+            { "role": "user", "content": "Hello, how are you doing today? I hope everything is Hh." },
+            { "role": "assistant", "content": "Hi there! I hope everything is wonderful." }
+        ]
+    ],
+    "expect": {
+      "ChatStructureValidator": "passed",
+      "DeduplicationValidator": "passed",
+      "LinkAvailabilityValidator": "passed",
+      "LanguageConsistencyValidator": "passed",
+      "DialogBalanceValidator": "passed",
+      "QuantitySizeValidator": "failed",
+      "GuardrailComplianceValidator": "passed"
+    }
+  }
