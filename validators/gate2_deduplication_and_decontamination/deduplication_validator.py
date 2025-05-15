@@ -17,7 +17,7 @@ class DeduplicationValidator(BaseValidator):
         for i, item in enumerate(data):
             # Convert the "messages" list into a JSON string for hashing
             try:
-                key = json.dumps(item.messages, sort_keys=True)
+                key = json.dumps([msg.model_dump() for msg in item.messages], sort_keys=True)
             except (TypeError, ValueError) as e:
                 errors.append(ValidationErrorDetail(
                     index=i,
