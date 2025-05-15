@@ -26,7 +26,7 @@ class LinkAvailabilityValidator(BaseValidator):
     async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
        
-        total = sum(len(item.messages)) for item in data)
+        total = sum(len(item.messages) for item in data)
 
         # Check if js.safeFetch exists; fallback to js.fetch
         if js:

@@ -137,20 +137,43 @@ class JsonValidator extends HTMLElement {
 
     const default_placeholder = JSON.parse(`
       [
-          {
-              "messages": [
-                  { "role": "system", "content": "You are helpful assistant." },
-                  { "role": "user", "content": "Hello, how are you doing today? I hope everything is wonderful." },
-                  { "role": "assistant", "content": "Hi there! I hope everything is wonderful." }
-              ]
-          },
-          {
-              "messages": [
-                  { "role": "user", "content": "Hello, how are you doing today? I hope everything is Hh." },
-                  { "role": "assistant", "content": "Hi there! I hope everything is wonderful." }
-              ]
-          }
+   {
+      "messages":[
+         {
+            "role":"system",
+            "content":"You are a helpful assistant."
+         },
+         {
+            "role":"user",
+            "content":"Hello, how are you doing today? I hope everything is wonderful."
+         },
+         {
+            "role":"assistant",
+            "content":"Hello! I'm doing great, thank you. I hope you're having a wonderful day as well."
+         },
+         {
+            "role":"user",
+            "content":"How can I reset my password?"
+         },
+         {
+            "role":"assistant",
+            "content":"You can reset your password by clicking on 'Forgot Password' on the login page."
+         }
       ]
+   },
+   {
+      "messages":[
+         {
+            "role":"user",
+            "content":"Can you tell me how to reset my password?"
+         },
+         {
+            "role":"assistant",
+            "content":"Sure! To reset your password, go to the login page and click on 'Forgot Password'. Follow the instructions to create a new one."
+         }
+      ]
+   }
+]
           `);
     this.textarea.value = JSON.stringify(default_placeholder, null, 2);
 
@@ -390,6 +413,11 @@ class JsonValidator extends HTMLElement {
         ? r.result 
         : JSON.stringify(r.result, null, 2);
         
+      // If it's multiline and not already HTML-formatted, wrap in <pre>
+      if (resText.includes('\n') && !resText.includes('<pre>')) {
+        resText = `<pre>${resText}</pre>`;
+      }
+
       // Look for a Base64 PNG reference in the result text.
       const pattern = /data:image\/png;base64,[A-Za-z0-9+/=]+/;
       const match = resText.match(pattern);
@@ -400,7 +428,7 @@ class JsonValidator extends HTMLElement {
       }
       
       // Use <br> for line breaks
-      return `🔍 ${r.validator}:<br>${resText}`;
+      return `🔍 <b>${r.validator}</b>:<br>${resText}`;
     }).join('<br><br>');
     
     // Use innerHTML to render HTML tags (like <img>) in the output.

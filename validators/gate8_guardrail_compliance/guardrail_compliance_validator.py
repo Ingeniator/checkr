@@ -34,7 +34,7 @@ except ImportError:
 class GuardrailComplianceValidator(BaseValidator):
     async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
-        total = sum(len(item.messages)) for item in data)
+        total = sum(len(item.messages) for item in data)
         current = 0
         for i, item in enumerate(data):
             for j, msg in enumerate(item.messages):

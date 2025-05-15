@@ -50,6 +50,7 @@ def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], Valid
                     obj,
                     ValidatorDetail(
                         title=front.get("title", Path(file_path).stem),
+                        enabled=front.get("enabled", True),
                         type=ValidatorType.dataset_backend,
                         stage=front.get("stage", "experimental"),
                         description=front.get("description", ""),

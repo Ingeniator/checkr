@@ -63,6 +63,14 @@ class BackendValidatorProvider(BaseValidatorProvider):
             VALIDATORS_PATH = Path(__file__).parent.parent / self.base_path
             full_file_path = Path(f"{VALIDATORS_PATH}/{file_path}")
             front = extract_frontmatter_from_file(full_file_path)
+            tags = front.get("tags", [])
+            # Decide base class based on tag
+            if "per_item" in tags:
+                base_class = "BaseRemoteValidatorPerItem"
+                import_path = "validators.base_remote_validator_per_item"
+            else:
+                base_class = "BaseRemoteValidator"
+                import_path = "validators.base_remote_validator"
             obj =  self._get_validator_class_from_file(full_file_path)
             class_name = obj.__name__
             endpoint = f"\'/api/v0/validate/{self.source_prefix}/{file_path}\'"
@@ -70,9 +78,9 @@ class BackendValidatorProvider(BaseValidatorProvider):
 \"\"\"
 {render_frontmatter(front)}
 \"\"\"
-from validators.base_remote_validator import BaseRemoteValidator
+from {import_path} import {base_class}
 
-class RemoteBackend{class_name}(BaseRemoteValidator):
+class RemoteBackend{class_name}({base_class}):
     endpoint = {endpoint}
             """
             return result
