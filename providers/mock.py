@@ -13,6 +13,7 @@ class MockValidatorProvider(BaseValidatorProvider):
     def __init__(self,):
         self.source_prefix = "mock"
         self.base_path = "validators"
+        self.base_validators = []
 
     async def fetch_frontend_validators(self) -> list[ValidatorDetail]:
         return [

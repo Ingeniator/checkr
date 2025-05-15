@@ -44,7 +44,6 @@ async def get_validator_detail(source: str, request_: Request):
 
 @router.get("/raw/base")
 async def get_base_validators_source(request_: Request):
-    logger.info("fetch_frontend_base_validators_source")
     return await fetch_frontend_base_validators_source(settings.provider_name)
 
 @router.get("/raw/{source:path}", response_class=PlainTextResponse)
@@ -76,7 +75,6 @@ async def _validate(gates: [], dataset: list[DataItem], options: dict[str, Any],
         logger.debug(result)
         if result["status"] == "failed":
             all_errors.extend(result["errors"])
-    print(all_errors)
     logger.debug(f"validate_dataset {all_errors}")
     return {
         "status": "ok" if not all_errors else "failed",
