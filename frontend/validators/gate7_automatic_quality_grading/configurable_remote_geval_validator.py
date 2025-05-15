@@ -16,15 +16,12 @@ from validators.base_remote_geval_validator import BaseRemoteGEvalValidator
 
 class ConfigurableRemoteGEvalValidator(BaseRemoteGEvalValidator):
     def __init__(self, *args, **kwargs):
-        options = kwargs.get("options", {})
+        super().__init__(*args, **kwargs)
 
-        quality_definition = options.get(
-            "quality_definition",
-            "Evaluate the assistant’s reply."
-        )
+        quality_definition = self.options.get("quality_definition", "Evaluate the overall quality of the assistant reply.")
 
-        # Dynamically construct prompt and inject into options
-        options["prompt"] = (
+        # Dynamically construct prompt
+        self.prompt_template = (
             f"You are a helpful assistant evaluator.\n\n"
             f"{quality_definition}\n"
             f"Use a score from 1 (poor quality) to 100 (excellent quality).\n\n"
@@ -33,6 +30,9 @@ class ConfigurableRemoteGEvalValidator(BaseRemoteGEvalValidator):
             f"Only respond with a number from 1 to 100."
         )
 
-        kwargs["options"] = options
+        # Set scoring attributes from options (or default if needed)
+        self.score_title = self.options.get("score_title", "Custom G-Eval Score")
+        self.score_code = self.options.get("score_code", "low_geval_score")
 
-        super().__init__(*args, **kwargs)
+        # Inject into options to pass to backend
+        self._inject_keys()

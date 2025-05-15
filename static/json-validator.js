@@ -14,7 +14,7 @@ class JsonValidator extends HTMLElement {
           border-radius: 8px;
           max-width: 900px;
         }
-        textarea {
+        textarea.input-data {
           width: 98%;
           height: 150px;
           margin-bottom: 10px;
@@ -34,12 +34,20 @@ class JsonValidator extends HTMLElement {
           margin-top: 10px;
           margin-right: 10px;
         }
-        input.validator-options {
-          width: 600px;
-          border: 0px;
+        textarea.validator-options {
+          width: 100%;
+          min-height: 100px;
+          max-height: 600px;
+          resize: none;
+          overflow: hidden;
+          font-family: monospace;
+          font-size: 1rem;
+          line-height: 1.4;
+          box-sizing: border-box;
+          padding: 8px;
         }
       </style>
-      <textarea placeholder="Paste JSON here..."></textarea>
+      <textarea class="input-data" id="input" placeholder="Paste JSON here..."></textarea>
       <h2>Available Validators:</h2>
       <div id="validator-list"></div>
       <button id="validate" style="display: none;">Validate</button>
@@ -93,17 +101,7 @@ class JsonValidator extends HTMLElement {
               ${hasOptions ? `
               <br>
               <div class="validator-options-wrapper" style="margin-left: 2.8em;">
-                <label for="options-${v.url}">
-                  Options:
-                </label>
-                <input
-                  type="text"
-                  id="options-${v.url}"
-                  class="validator-options"
-                  data-url="${v.url}"
-                  value='${JSON.stringify(v.options)}'
-                  aria-label="Validator options for ${v.url}"
-                >
+                <textarea class="validator-options" data-url="${v.url}">${JSON.stringify(v.options, null, 2)}</textarea>
               </div>
               ` : ''}
             </div>
@@ -111,6 +109,16 @@ class JsonValidator extends HTMLElement {
         }).join('')}
       `;
     }).join('');
+    container.querySelectorAll("textarea.validator-options").forEach(textarea => {
+      const resizeToFit = () => {
+        textarea.style.height = "auto"; // Reset height
+        textarea.style.height = textarea.scrollHeight + "px"; // Adjust to content
+      };
+    
+      // Resize immediately and on input
+      resizeToFit();
+      textarea.addEventListener("input", resizeToFit);
+    });
   }
 
   async nextIdle() {
@@ -125,7 +133,7 @@ class JsonValidator extends HTMLElement {
 
     const validatorList = this.shadowRoot.querySelector('#validator-list');
 
-    this.textarea = this.shadowRoot.querySelector('textarea');
+    this.textarea = this.shadowRoot.querySelector('#input');
     this.validateBtn = this.shadowRoot.querySelector('#validate');
     this.submitBtn = this.shadowRoot.querySelector('#submit');
     this.output = this.shadowRoot.querySelector('#output');
@@ -303,8 +311,8 @@ class JsonValidator extends HTMLElement {
     
         this.progressOutput.textContent = `Running: ${label}…`;
         await this.nextIdle();  // lets browser update UI
-        // Get the options input for this validator (using its data-url attribute)
-        const optionsInput = this.shadowRoot.querySelector(`input.validator-options[data-url="${url}"]`);
+        // Get the options text-area for this validator (using its data-url attribute)
+        const optionsInput = this.shadowRoot.querySelector(`textarea.validator-options[data-url="${url}"]`);
         let options = {};
         if (optionsInput) {
           try {

@@ -16,11 +16,14 @@ class BaseRemoteGEvalValidator(BaseRemoteValidator, ABC):
 
     inject_keys = ["prompt", "score_title", "score_code", "score_regex"]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        for key in self.inject_keys:
+    def _inject_keys(self):
+         for key in self.inject_keys:
             attr = key if key != "prompt" else "prompt_template"
             value = getattr(self, attr, None)
             if value is not None:
                 self.options.setdefault(key, value)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._inject_keys()
+       
