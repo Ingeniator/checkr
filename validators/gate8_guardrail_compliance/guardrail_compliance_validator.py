@@ -15,8 +15,8 @@ try:
 except ImportError:
     profanity = None
 
-import sys
-import types
+# import sys
+#import types
 
 # if "srsly" not in sys.modules:
 #     dummy_srsly = types.ModuleType("srsly")

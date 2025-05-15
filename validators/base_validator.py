@@ -45,7 +45,7 @@ class BaseValidator(ABC):
         self.progress_callback = progress_callback
         self.validator_name = self.__class__.__name__
 
-    async def validate(self, js_data: "JsProxy | list[Any]]") -> dict[str, Any]:
+    async def validate(self, js_data: "JsProxy | list[Any]") -> dict[str, Any]:
         """
         Entry point for Pyodide: receives JsProxy or Python list
         """

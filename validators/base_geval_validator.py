@@ -10,10 +10,12 @@ tags: [abstract, geval, score_based, semantic]
 from abc import ABC
 from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
 import matplotlib.pyplot as plt
-import html, re, io, base64
+import html
+import re
+import io
+import base64
 from openai import AsyncOpenAI
 from core.config import settings
-import yaml
 from utils.yaml import load_and_expand_yaml
 
 class BaseGEvalValidator(BaseValidator, ABC):
@@ -123,7 +125,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
             errors.append(ValidationErrorDetail(
                 index=None,
                 code="score_distribution_plot",
-                error=f"Score distribution attached.",
+                error="Score distribution attached.",
                 field="data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8")
             ))
 
@@ -143,3 +145,24 @@ class BaseGEvalValidator(BaseValidator, ABC):
 
         except Exception as e:
             raise RuntimeError(f"G-Eval LLM call failed: {e}")
+
+"""
+    Reads all key attributes (prompt_template, score_regex, score_title, score_code, etc.) from options
+"""
+class DynamicGEvalValidator(BaseGEvalValidator):
+    def format_prompt(self, user: str, assistant: str) -> str:
+        template = self.options.get("prompt", "")
+        return template.format(user=user, assistant=assistant)
+
+    def extract_score_from_output(self, raw_output: str) -> float:
+        regex = self.options.get("score_regex", r"\b(100|[1-9][0-9]?)(?:\.0)?\b")
+        match = re.search(regex, raw_output)
+        return float(match.group(1)) if match else 0.0
+
+    @property
+    def score_title(self) -> str:
+        return self.options.get("score_title", "G-Eval Score")
+
+    @property
+    def score_code(self) -> str:
+        return self.options.get("score_code", "low_score")

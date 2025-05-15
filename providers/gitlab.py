@@ -1,5 +1,4 @@
 import gitlab
-import yaml
 from pathlib import Path
 from core.config import settings
 from providers.base import BaseValidatorProvider
@@ -105,7 +104,7 @@ class GitlabValidatorProvider(BaseValidatorProvider):
         else:
             base_validators = await self._fetch_validators(include_base_validator=True)
         result = {}
-        for base_validator in self.base_validators:
+        for base_validator in base_validators:
             file_path = base_validator.source
             if file_path.startswith(self.source_prefix):
                 file_path = file_path[len(self.source_prefix) + 1:]

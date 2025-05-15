@@ -8,6 +8,7 @@ from schemas.validators import DatasetGroupValidationRequest, ValidatorDetail, V
 from core.config import settings
 from core.logging_config import setup_logging
 from typing import Any
+from validators.base_geval_validator import DynamicGEvalValidator
 
 # Configure logging
 logger = setup_logging().bind(module=__name__)
@@ -23,7 +24,7 @@ async def init_validators(app: FastAPI):
     }
     # warm-up
     logger.info(f"Warming-up: Getting frontend validators (provider={settings.provider_name})")
-    frontend_validators = await fetch_frontend_validators(settings.provider_name)
+    await fetch_frontend_validators(settings.provider_name)
 
 async def get_list_dataset_validators(request_: Request):
     frontend_validators = await fetch_frontend_validators(settings.provider_name)
@@ -96,3 +97,7 @@ async def submit(request: Request):
     print("Received body:", body)
     return {"status": "received", "body": body}
 
+@router.post("/g-eval")
+async def g_eval_handler(req: DatasetValidationRequest):
+    validator = DynamicGEvalValidator(options=req.options)
+    return {"status": "passed" if not (errors := await validator._validate(req.dataset)) else "failed", "errors": [e.model_dump() for e in errors]}

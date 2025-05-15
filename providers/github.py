@@ -1,5 +1,4 @@
 import httpx
-import yaml
 import base64
 from pathlib import Path, PurePosixPath
 from core.config import settings
