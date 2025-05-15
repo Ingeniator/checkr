@@ -1,7 +1,7 @@
 """
 ---
 title: Assistant Quality Validator (G-Eval Style)
-description: Uses a custom OpenAI-compatible LLM to evaluate the overall quality of assistant responses.
+description: Uses LLM as a judge to evaluate the overall quality of assistant responses.
 tags: [semantic, quality, clarity, helpfulness, geval, gate9]
 options:
   score_threshold: 70

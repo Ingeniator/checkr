@@ -1,7 +1,7 @@
 """
 ---
 title: Assistant Relevance Validator (G-Eval Style)
-description: Uses a custom OpenAI-compatible LLM as a judge to evaluate assistant response relevance.
+description: Uses LLM as a judge to evaluate relevance of assistant responses.
 tags: [semantic, relevance, geval, gate7]
 options:
   score_threshold: 70

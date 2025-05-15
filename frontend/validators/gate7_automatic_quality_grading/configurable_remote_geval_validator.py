@@ -1,23 +1,41 @@
 """
 ---
 title: Configurable G-Eval Validator
-description: Run custom LLM evaluation from config.
+description: Uses LLM as a judge to evaluate assistant responses with a customizable prompt.
 tags: [semantic, remote, geval, pyodide, dynamic]
 options:
-  endpoint: /validators/api/v0/g-eval
-  prompt: |
-    You are a helpful assistant evaluator.
-    Evaluate the overall quality of the assistant\'s reply, based on how helpful, clear, relevant, and well-phrased it is.
-    Respond with a number from 1 to 100 only.
-    \n\nUser:\n{user}\n\nAssistant:\n{assistant}\n
-  score_regex: "\\b(100|[1-9][0-9]?)(?:\\.0)?\\b"
-  score_threshold: 70
+  quality_definition: "Evaluate the overall quality of the assistant's reply, based on how helpful, clear, relevant, and well-phrased it is."
   score_title: "Custom G-Eval Score"
   score_code: "low_geval_score"
+  score_threshold: 70
   preview_limit: 3
 ---
 """
-from validators.base_remote_validator import BaseRemoteValidator
+from validators.base_remote_geval_validator import BaseRemoteGEvalValidator
+from validators.base_remote_geval_validator import BaseRemoteGEvalValidator
 
-class ConfigurableRemoteGEvalValidator(BaseRemoteValidator):
-    pass
+class ConfigurableRemoteGEvalValidator(BaseRemoteGEvalValidator):
+    def __init__(self, *args, **kwargs):
+        options = kwargs.get("options", {})
+
+        quality_definition = options.get(
+            "quality_definition",
+            "Evaluate the assistant’s reply."
+        )
+
+        # Dynamically construct prompt and inject into options
+        options["prompt"] = (
+            f"You are a helpful assistant evaluator.\n\n"
+            f"{quality_definition}\n"
+            f"Use a score from 1 (poor quality) to 100 (excellent quality).\n\n"
+            f"User message:\n{{user}}\n\n"
+            f"Assistant reply:\n{{assistant}}\n\n"
+            f"Only respond with a number from 1 to 100."
+        )
+
+        options.setdefault("score_title", "G-Eval Score")
+        options.setdefault("score_code", "low_score")
+
+        kwargs["options"] = options
+
+        super().__init__(*args, **kwargs)
