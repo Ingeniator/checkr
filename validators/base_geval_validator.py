@@ -111,7 +111,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
         if errors and dialog_avg_scores:
             fig, ax = plt.subplots(figsize=(6, 4))
             ax.hist(dialog_avg_scores, bins=10, color="lightgreen", edgecolor="black")
-            ax.set_title(f"G-Eval {self.score_title} Distribution")
+            ax.set_title(f"{self.score_title} Distribution")
             ax.set_xlabel("Score")
             ax.set_ylabel("Frequency")
             ax.grid(True)
