@@ -91,7 +91,7 @@ build:  fetch-static-js ## Build and run application
 run:  ## Run application
 	python3 -m uv run entrypoint.py
 
-PHONY: fetch-pyodide-static-js
+PHONY: fetch-static-js
 fetch-static-js:
 	@echo "📥 Downloading JS assets..."
 	@mkdir -p static/pyodide

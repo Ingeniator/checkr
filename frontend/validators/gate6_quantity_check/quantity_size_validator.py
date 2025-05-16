@@ -1,6 +1,7 @@
 """
 ---
 title: Quantity / Size Check Validator
+enabled: false
 description: Checks that the dataset has enough dialogs for meaningful training.
 tags: [quantity, size, gate6]
 options:

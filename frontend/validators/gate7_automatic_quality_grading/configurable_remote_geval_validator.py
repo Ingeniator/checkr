@@ -1,6 +1,7 @@
 """
 ---
 title: Configurable G-Eval Validator
+enabled: false
 description: Uses LLM as a judge to evaluate assistant responses with a customizable prompt.
 tags: [semantic, remote, geval, pyodide, dynamic]
 options:

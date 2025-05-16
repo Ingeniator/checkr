@@ -54,12 +54,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             "process_time": f"{process_time:.4f}s",
         }
         
-        if logger.isEnabledFor(logging.DEBUG):
-            try:
-                response_log["body"] = json.loads(response_body.decode("utf-8"))
-            except ValueError:
-                response_log["body"] = response_body.decode("utf-8")  # Log as raw text
-
-        logger.debug("Outgoing Response", **response_log)
+        # not every response is utf-8 text
+        # if logger.isEnabledFor(logging.DEBUG):
+        #     try:
+        #         response_log["body"] = json.loads(response_body.decode("utf-8"))
+        #          logger.debug("Outgoing Response", **response_log)
+        #     except ValueError:
+        #         response_log["body"] = response_body.decode("utf-8")  # Log as raw text
 
         return response

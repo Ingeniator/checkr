@@ -1,6 +1,7 @@
 """
 ---
 title: Configurable Remote Validator Per Item
+enabled: false
 stage: draft
 description: Run validation per item using endpoint from config
 tags: [remote, gate10]

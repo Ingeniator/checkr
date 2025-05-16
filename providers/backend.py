@@ -73,7 +73,7 @@ class BackendValidatorProvider(BaseValidatorProvider):
                 import_path = "validators.base_remote_validator"
             obj =  self._get_validator_class_from_file(full_file_path)
             class_name = obj.__name__
-            endpoint = f"\'/api/v0/validate/{self.source_prefix}/{file_path}\'"
+            endpoint = f"\'{settings.root_path}/api/v0/validate/{self.source_prefix}/{file_path}\'"
             result = f"""
 \"\"\"
 {render_frontmatter(front)}

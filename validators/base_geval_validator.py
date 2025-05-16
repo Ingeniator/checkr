@@ -17,6 +17,20 @@ import base64
 from openai import AsyncOpenAI
 from core.config import settings
 from utils.yaml import load_and_expand_yaml
+import httpx
+import contextvars
+
+# Shared context var (to pass headers into the transportlayer
+request_headers_vars = contextvars.ContextVar("request_headers", default={})
+
+class ContextHeaderTransport(httpx.AsyncBaseTransport):
+    def __init__(self, inner):
+        self.inner = inner
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        custom_headers = request_headers_vars.get()
+        for key, value in custom_headers.items():
+            request.headers[key] = value
+        return await self.inner.handle_async_request(request)
 
 class BaseGEvalValidator(BaseValidator, ABC):
     prompt_template: str = ""
@@ -30,9 +44,13 @@ class BaseGEvalValidator(BaseValidator, ABC):
         config_path = settings.llm_config_path
         self.config = load_and_expand_yaml(config_path)['geval']
 
+        trasport = ContextHeaderTransport(httpx.AsyncHTTPTransport())
+        httpx_client = httpx.AsyncClient(transport=trasport)
+
         self.client = AsyncOpenAI(
             api_key=self.config.get("api_key", None),
-            base_url=self.config.get("api_base", None)
+            base_url=self.config.get("api_base", None),
+            http_client=httpx_client
         )
 
     def format_prompt(self, user: str, assistant: str) -> str:

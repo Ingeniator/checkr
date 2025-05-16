@@ -1,6 +1,7 @@
 """
 ---
 title: Deduplication Validator
+enabled: false
 description: Detects duplicate chat samples by comparing full message arrays.
 tags: [decontamination, deduplication, gate2]
 ---

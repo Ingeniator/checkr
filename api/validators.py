@@ -8,7 +8,7 @@ from schemas.validators import DatasetGroupValidationRequest, ValidatorDetail, V
 from core.config import settings
 from core.logging_config import setup_logging
 from typing import Any
-from validators.base_geval_validator import DynamicGEvalValidator
+from validators.base_geval_validator import DynamicGEvalValidator, request_headers_vars
 
 # Configure logging
 logger = setup_logging().bind(module=__name__)
@@ -60,6 +60,7 @@ async def get_validator_source(source: str, request_: Request):
     raise HTTPException(status_code=404, detail="Validator not found")
 
 async def _validate(gates: [], dataset: list[DataItem], options: dict[str, Any], request_: Request):
+    proxy_request_headers(request_)
     known_sources = {v: v for v in request_.app.state.backend_validators_dict}
     unknown = [g for g in gates if g not in known_sources]
     if unknown:
@@ -83,6 +84,9 @@ async def _validate(gates: [], dataset: list[DataItem], options: dict[str, Any],
         "errors": all_errors
     }
 
+def proxy_request_headers(request: Request):
+    request_headers_vars.set({"X-Group-ID": request.headers.get("X-Group-ID", "checkr/validators")})
+    
 @router.post("/validate/{source:path}")
 async def validate_dataset(source: str, request: DatasetValidationRequest, request_: Request):
     return await _validate([source], request.dataset, request.options, request_)
@@ -98,6 +102,7 @@ async def submit(request: Request):
     return {"status": "received", "body": body}
 
 @router.post("/g-eval")
-async def g_eval_handler(req: DatasetValidationRequest):
+async def g_eval_handler(req: DatasetValidationRequest, request_: Request):
+    proxy_request_headers(request_)
     validator = DynamicGEvalValidator(options=req.options)
     return {"status": "passed" if not (errors := await validator._validate(req.dataset)) else "failed", "errors": [e.model_dump() for e in errors]}

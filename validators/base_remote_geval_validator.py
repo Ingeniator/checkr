@@ -25,5 +25,4 @@ class BaseRemoteGEvalValidator(BaseRemoteValidator, ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._inject_keys()
-       
+        self._inject_keys()    

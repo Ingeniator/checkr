@@ -1,6 +1,7 @@
 """
 ---
 title: Assistant Quality Validator (G-Eval Style)
+enabled: false
 description: Uses LLM as a judge to evaluate the overall quality of assistant responses.
 tags: [semantic, quality, clarity, helpfulness, geval, gate9]
 options:
