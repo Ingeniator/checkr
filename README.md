@@ -3,10 +3,10 @@ Data Validation Service
 
 Checkr – Validation Service Overview
 
-Checkr is a backend service responsible for validating structured content and artifacts before they are accepted by systems like Keepr(Trustbox). It provides a uniform interface for executing different types of validations, each built around a well-defined base class.
+Checkr is a backend service responsible for validating structured content (datasets) before they are accepted by other systems. It provides a uniform interface for executing different types of validations, each built around a well-defined base class.
 
 🎯 Purpose
-Validate artifacts and datasets before storage or execution
+Validate datasets before storage or execution
 Enforce consistency, quality, and policy through automated pipelines
 Return standardized results and actionable status to the caller
 
@@ -27,20 +27,21 @@ Gate 3: Toxicity / Content Filters
 Gate 4: Language & Encoding
 ✅ These validators are chained and enforced in order.
 
-2. Artifact Validators
+2. Artifact Validators (TODO: Later)
 
 Used to validate full artifact objects (e.g., plugins, Python scripts, prompts)
 Can include:
 SAST/static analysis
 Schema validation
 Sanity checks or dry runs
-✅ These are triggered from external services (like Trustbox) via REST calls.
+✅ These are triggered from external services via REST calls.
 
 🔄 Key Differences from Generic Task Runners
-Each validator is strictly typed and registered via a known base class (BaseValidator, DatasetGate, etc.)
+Each validator is strictly typed and registered via a known base class (BaseValidator, etc.)
 Validators are not arbitrary tasks — they follow strict lifecycle and interface contracts
 Execution is observable and can be extended or audited easily
 
+✅ Quality of gates are described in ./validators/README.md
 
 🛠️ Checkr – REST API Design
 
@@ -51,9 +52,9 @@ All endpoints assume prefix: `/api/v1`
 
 | Method | Endpoint                      | Description                                        |
 |--------|-------------------------------|----------------------------------------------------|
-| POST   | `/validate/dataset`           | Validate a dataset JSON against enabled gates      |
-| GET    | `/validators/dataset`         | List available dataset gate validators             |
-| GET    | `/validators/dataset/{name}`  | Get details about a specific gate                  |
+| POST   | `/validate/`                  | Validate a dataset JSON against enabled gates      |
+| GET    | `/list`                       | List available dataset gate validators             |
+| GET    | `/info/{name}`                | Get details about a specific gate                  |
 
 Payload Example:
 ```json
@@ -62,23 +63,6 @@ Payload Example:
   "content": [ ... ],
   "config": {
     "gates": ["structure", "toxicity"]
-  }
-}
-
-📦 Artifact Validation
-Method	Endpoint	Description
-POST	/validate/artifact	Validate artifact payload (e.g., prompt, plugin)
-GET	/validators/artifact	List available artifact validators
-GET	/validators/artifact/{name}	Get details about a specific validator
-
-Payload Example:
-{
-  "type": "python_script",
-  "version": "v1.0.0",
-  "metadata": {...},
-  "content": "base64 or raw json",
-  "config": {
-    "strict_mode": true
   }
 }
 
@@ -94,46 +78,7 @@ Payload Example:
 }
 
 
-🗂️ Suggested Project Structure
-checkr/
-├── main.py                   # FastAPI entrypoint
-├── api/
-│   ├── __init__.py
-│   ├── routes/
-│   │   ├── dataset.py        # Routes for dataset validation
-│   │   ├── artifact.py       # Routes for artifact validation
-│   └── dependencies.py       # JWT/auth/context injection (optional)
-├── validators/
-│   ├── __init__.py
-│   ├── base.py               # BaseValidator, DatasetGate, etc.
-│   ├── dataset/
-│   │   ├── structure.py
-│   │   ├── toxicity.py
-│   │   ├── deduplication.py
-│   ├── artifact/
-│   │   ├── python_linter.py
-│   │   ├── sast_checker.py
-│   │   ├── prompt_sanity.py
-├── core/
-│   ├── loader.py             # Dynamic validator loader from registry
-│   ├── pipeline.py           # Gate chaining logic
-│   └── registry.py           # Maps validator names to classes
-├── schemas/
-│   ├── dataset.py
-│   ├── artifact.py
-│   └── result.py
-├── config/
-│   └── validator_config.yaml # Optionally declarative config of gates
-├── tests/
-│   ├── test_datasets/
-│   ├── test_artifacts/
-├── utils/
-│   └── hash.py, io.py        # Optional helpers
-├── logging_config.py
-└── requirements.txt
-
-
-🔐 Optional Enhancements
+🔐 Optional Enhancements (TODO)
 Per-request Request-ID or Trace-ID header support
 Webhook callback support for long-running validations
-Support for submitting inline content or fetching from a URI (e.g., GitHub or S3)
+Support for fetching dataset from a URI (e.g., GitHub or S3)
