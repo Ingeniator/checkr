@@ -1,4 +1,4 @@
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, HttpUrl
 from typing import Literal, Any
 
 from enum import Enum
@@ -27,9 +27,28 @@ class DataItem(BaseModel):
         raise ValueError("Expected either {'messages': [...]} or list of  dicts")
 
 class DatasetValidationRequest(BaseModel):
-    dataset: list[DataItem]
+    dataset: list[DataItem] | None = None  # list of data items
+    dataset_url: HttpUrl | None = None  # link to dataset
     index: int | None = None # for validation per item
     options: dict[str, Any] = {} # dict of options used by validators
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        if not values.get("dataset") and not values.get("dataset_url"):
+            raise ValueError("Either 'dataset' or 'dataset_url' must be provided.")
+        return values
+
+    @model_validator(mode='before')
+    @classmethod
+    def load_from_url_if_present(cls, values):
+        if values.get("dataset") is None and values.get("dataset_url"):
+            import httpx
+            resp = httpx.get(values["dataset_url"], timeout=30)
+            resp.raise_for_status()
+            values["dataset"] = resp.json()
+            logger.info(f"Received dataset of size {len(dataset)} from {request.dataset_url}")
+        return values
 
 class DatasetGroupValidationRequest(DatasetValidationRequest):
     dataset: list[DataItem]
