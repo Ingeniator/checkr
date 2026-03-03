@@ -13,6 +13,11 @@ options:
   min_frequency: 0.6
   n_runs: 1
   use_dummy: false
+doc:
+  labels: "Quality labels to check. Each key is a label name, value is its description for the LLM. An item is flagged when a label is detected."
+  min_frequency: "Consensus threshold (0-1). A label must be triggered in at least this fraction of runs to count. Higher = fewer false positives."
+  n_runs: "Number of independent classification passes. Labels are confirmed by consensus across runs."
+  use_dummy: "When true, uses synthetic results instead of real LLM calls. For testing only."
 ---
 """
 

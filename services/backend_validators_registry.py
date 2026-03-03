@@ -59,6 +59,7 @@ def discover_validators_with_metadata() -> List[Tuple[Type[BaseValidator], Valid
                         description=front.get("description", ""),
                         tags=tags,
                         options=front.get("options", {}),
+                        doc=front.get("doc", {}),
                         source=f"{SOURCE_PREFIX}/{rel_path}"
                     )
                 ))

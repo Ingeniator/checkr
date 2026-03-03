@@ -8,6 +8,11 @@ options:
   max_length: 20
   min_user_assistant_ratio: 0.5
   max_user_assistant_ratio: 1
+doc:
+  min_length: "Minimum average dialog length (number of turns). Flags if dialogs are too short for meaningful training."
+  max_length: "Maximum average dialog length. Flags if dialogs are excessively long."
+  min_user_assistant_ratio: "Minimum ratio of user to assistant messages. Below this, user messages are underrepresented."
+  max_user_assistant_ratio: "Maximum ratio of user to assistant messages. Above this, user messages are overrepresented."
 ---
 """
 

@@ -12,6 +12,11 @@ options:
     accuracy: "How factually correct and reliable the information in the response is"
   n_runs: 1
   use_dummy: false
+doc:
+  score_threshold: "Minimum average score (0-100) across all attributes. Items scoring below this are flagged."
+  attributes: "Quality dimensions to rate. Each key is an attribute name, value is its description for the LLM."
+  n_runs: "Number of independent rating passes. Multiple runs are averaged to reduce noise and LLM bias."
+  use_dummy: "When true, uses synthetic scores instead of real LLM calls. For testing only."
 ---
 """
 

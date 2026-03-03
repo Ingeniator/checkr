@@ -68,3 +68,4 @@ class ValidatorDetail(BaseModel):
     description: str
     tags: list[str] = []
     options: dict = {}
+    doc: dict[str, str] = {}

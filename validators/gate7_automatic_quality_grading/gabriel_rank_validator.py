@@ -13,6 +13,14 @@ options:
   outlier_std_threshold: 1.5
   fail_on_outliers: true
   use_dummy: false
+doc:
+  attributes: "Quality dimensions to rank on. Each key is an attribute name, value is its description for the LLM."
+  n_rounds: "Number of pairwise comparison rounds. More rounds = more confident rankings but more LLM calls. Automatically capped at group_size - 1 for small groups."
+  min_items: "Minimum dataset size for flat mode (no grouping). Raises an error if fewer items are provided."
+  min_group_size: "Minimum items per prompt group in grouped mode. Groups smaller than this are skipped."
+  outlier_std_threshold: "Standard deviations below the leave-one-out mean to flag as outlier. Lower = more sensitive (1.5 = moderate, 3.0 = strict, 5.0 = extreme only)."
+  fail_on_outliers: "When true, items ranked significantly below their group are reported as validation errors. When false, only ranking reports are emitted."
+  use_dummy: "When true, uses synthetic scores instead of real LLM calls. For testing only."
 ---
 """
 
@@ -84,13 +92,17 @@ class GabrielRankValidator(BaseGabrielValidator):
                 f"Pairwise ranking requires at least {min_items} items, got {len(df)}"
             )
 
+        # Cap rounds: with N items there are only N*(N-1)/2 unique pairs,
+        # so extra rounds just re-compare the same matchups.
+        effective_rounds = min(n_rounds, max(1, len(df) - 1))
+
         result_df = await gabriel.rank(
             df=df,
             column_name=text_column,
             attributes=attributes,
             save_dir=save_dir,
             model=model,
-            n_rounds=n_rounds,
+            n_rounds=effective_rounds,
             use_dummy=use_dummy,
             reset_files=True,
         )
@@ -120,13 +132,17 @@ class GabrielRankValidator(BaseGabrielValidator):
             group_save_dir = os.path.join(save_dir, f"group_{group_idx}")
             os.makedirs(group_save_dir, exist_ok=True)
 
+            # Cap rounds per group size — extra rounds just re-compare
+            # the same pairs when the group is small.
+            effective_rounds = min(n_rounds, max(1, len(group_df) - 1))
+
             group_result = await gabriel.rank(
                 df=group_df.reset_index(drop=True),
                 column_name=text_column,
                 attributes=attributes,
                 save_dir=group_save_dir,
                 model=model,
-                n_rounds=n_rounds,
+                n_rounds=effective_rounds,
                 use_dummy=use_dummy,
                 reset_files=True,
             )

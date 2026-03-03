@@ -6,6 +6,9 @@ tags: [language, encoding, gate4]
 options:
   expected_lang: en
   length_threshold: 20
+doc:
+  expected_lang: "ISO 639-1 language code (e.g. en, es, zh-cn). When set, all messages must match this language. Leave unset to only check user/assistant consistency."
+  length_threshold: "Minimum character count for language detection. Messages shorter than this are skipped as too short for reliable detection."
 ---
 """
 

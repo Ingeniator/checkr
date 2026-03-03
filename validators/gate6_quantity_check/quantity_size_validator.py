@@ -6,6 +6,9 @@ tags: [quantity, size, gate6]
 options:
   min_samples: 50
   min_turns: 2
+doc:
+  min_samples: "Minimum number of dialogs required in the dataset for meaningful training."
+  min_turns: "Minimum number of turns (messages) per dialog. Dialogs shorter than this are flagged."
 ---
 """
 

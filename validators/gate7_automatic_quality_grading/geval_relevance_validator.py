@@ -6,6 +6,9 @@ tags: [semantic, relevance, geval, gate7]
 options:
   score_threshold: 70
   preview_limit: 3
+doc:
+  score_threshold: "Minimum relevance score (0-100). Items scoring below this are flagged as irrelevant."
+  preview_limit: "Number of low-scoring items to include in the error preview for quick inspection."
 ---
 """
 

@@ -11,6 +11,13 @@ options:
   max_words_per_call: 1000
   n_rounds: 2
   use_dummy: false
+doc:
+  instructions: "Free-form prompt telling the LLM what kinds of patterns to look for in the responses."
+  fail_on_discovery: "When true, individual items matching a discovered pattern are flagged as errors. When false, only dataset-level pattern reports are emitted."
+  min_frequency_pct: "Minimum percentage of items a pattern must appear in to be reported. Lower = more patterns surfaced."
+  max_words_per_call: "Maximum words sent per LLM call. Longer texts are chunked to stay within this limit."
+  n_rounds: "Number of codification rounds. More rounds refine and consolidate discovered patterns."
+  use_dummy: "When true, uses synthetic results instead of real LLM calls. For testing only."
 ---
 """
 
