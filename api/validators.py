@@ -6,12 +6,11 @@ from services.frontend_validators_registry import fetch_frontend_validators, fet
 
 from schemas.validators import DatasetGroupValidationRequest, ValidatorDetail, ValidatorType, DataItem, DatasetValidationRequest
 from core.config import settings
-from core.logging_config import setup_logging
 from typing import Any
 from validators.base_geval_validator import DynamicGEvalValidator, request_headers_vars
+import structlog
 
-# Configure logging
-logger = setup_logging().bind(module=__name__)
+logger = structlog.get_logger().bind(module=__name__)
 
 router = APIRouter()
 
@@ -59,10 +58,9 @@ async def get_validator_source(source: str, request_: Request):
                 return await fetch_frontend_validator_source(source, "backend")
     raise HTTPException(status_code=404, detail="Validator not found")
 
-async def _validate(gates: [], dataset: list[DataItem], options: dict[str, Any], request_: Request):
+async def _validate(gates: list[str], dataset: list[DataItem], options: dict[str, Any], request_: Request):
     proxy_request_headers(request_)
-    known_sources = {v: v for v in request_.app.state.backend_validators_dict}
-    unknown = [g for g in gates if g not in known_sources]
+    unknown = [g for g in gates if g not in request_.app.state.backend_validators_dict]
     if unknown:
         raise HTTPException(
             status_code=400,
@@ -98,8 +96,8 @@ async def validate_dataset_on_several_gates(request: DatasetGroupValidationReque
 @router.post("/submit")
 async def submit(request: Request):
     body = await request.json()
-    print("Received body:", body)
-    return {"status": "received", "body": body}
+    logger.debug("Received submit body", body=body)
+    return {"status": "received"}
 
 @router.post("/g-eval")
 async def g_eval_handler(req: DatasetValidationRequest, request_: Request):

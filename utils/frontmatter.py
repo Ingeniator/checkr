@@ -2,9 +2,9 @@ import re
 import yaml
 from pathlib import Path
 from typing import Any
-from core.logging_config import setup_logging
+import structlog
 
-logger = setup_logging()
+logger = structlog.get_logger()
 
 FRONTMATTER_REGEX = re.compile(r"^\s*---\s*\n(.*?)\n---", re.DOTALL | re.MULTILINE)
 

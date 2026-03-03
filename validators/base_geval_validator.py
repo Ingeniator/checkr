@@ -44,8 +44,8 @@ class BaseGEvalValidator(BaseValidator, ABC):
         config_path = settings.llm_config_path
         self.config = load_and_expand_yaml(config_path)['geval']
 
-        trasport = ContextHeaderTransport(httpx.AsyncHTTPTransport())
-        httpx_client = httpx.AsyncClient(transport=trasport)
+        transport = ContextHeaderTransport(httpx.AsyncHTTPTransport())
+        httpx_client = httpx.AsyncClient(transport=transport)
 
         self.client = AsyncOpenAI(
             api_key=self.config.get("api_key", None),

@@ -1,13 +1,14 @@
 import gitlab
+import asyncio
 from pathlib import Path
 from core.config import settings
 from providers.base import BaseValidatorProvider
 from schemas.validators import ValidatorDetail, ValidatorType
-from core.logging_config import setup_logging
 from utils.frontmatter import extract_frontmatter
 from utils.yaml import load_and_expand_yaml
+import structlog
 
-logger = setup_logging()
+logger = structlog.get_logger()
 
 class GitlabValidatorProvider(BaseValidatorProvider):
 
@@ -40,7 +41,7 @@ class GitlabValidatorProvider(BaseValidatorProvider):
     async def _fetch_validators(self, include_base_validator = False) -> list[ValidatorDetail]:
         self.non_base_validators = []
         self.base_validators = []
-        for file_path in self._walk_tree():
+        for file_path in await asyncio.to_thread(self._walk_tree):
             try:
                 f = self.project.files.get(file_path=file_path, ref=self.ref)
                 content = f.decode().decode("utf-8")

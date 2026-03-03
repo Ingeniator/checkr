@@ -6,13 +6,13 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from contextlib import asynccontextmanager
 from core.config import settings
-from core.logging_config import setup_logging
 from middlewares.logging_middleware import LoggingMiddleware
+import structlog
 from middlewares.metrics_middleware import PrometheusMiddleware, metrics
 
 from api.validators import router as validator_router, init_validators
 
-logger = setup_logging()
+logger = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

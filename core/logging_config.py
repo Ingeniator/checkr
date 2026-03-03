@@ -2,16 +2,21 @@ from core.config import settings
 import logging
 import structlog
 
+_configured = False
+
 def setup_logging():
-    """Configures logging for the entire application."""
-    
+    """Configures logging for the entire application. Safe to call multiple times."""
+    global _configured
+    if _configured:
+        return structlog.get_logger()
+
     # 1. Standard logging configuration
     logging.basicConfig(
         level=settings.log_level,
         format="%(message)s",  # Structlog will handle formatting
         handlers=[logging.StreamHandler()]  # Add more handlers if needed
     )
-    
+
     # 2. Configure structlog
     structlog.configure(
         processors=[
@@ -30,4 +35,5 @@ def setup_logging():
     # 3. Optional: Reduce noisy logs from external libraries
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+    _configured = True
     return structlog.get_logger()

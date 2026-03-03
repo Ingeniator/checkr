@@ -2,11 +2,11 @@
 
 from providers.base import BaseValidatorProvider
 from schemas.validators import ValidatorDetail, ValidatorType
-from core.logging_config import setup_logging
 from utils.frontmatter import extract_frontmatter
 from pathlib import Path
+import structlog
 
-logger = setup_logging()
+logger = structlog.get_logger()
 
 class MockValidatorProvider(BaseValidatorProvider):
 

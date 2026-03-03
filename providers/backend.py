@@ -3,8 +3,8 @@ from pathlib import Path
 from core.config import settings
 from providers.base import BaseValidatorProvider
 from schemas.validators import ValidatorDetail
-from core.logging_config import setup_logging
 from services.backend_validators_registry import discover_validators_with_metadata
+import structlog
 
 import warnings
 
@@ -12,7 +12,7 @@ import importlib
 from utils.frontmatter import extract_frontmatter_from_file, render_frontmatter
 from validators.base_validator import BaseValidator
 
-logger = setup_logging()
+logger = structlog.get_logger()
 
 class BackendValidatorProvider(BaseValidatorProvider):
 

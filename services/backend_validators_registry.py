@@ -5,9 +5,9 @@ from typing import Type, List, Tuple
 from validators.base_validator import BaseValidator
 from schemas.validators import ValidatorDetail, ValidatorType
 from utils.frontmatter import extract_frontmatter_from_file
-from core.logging_config import setup_logging
+import structlog
 
-logger = setup_logging()
+logger = structlog.get_logger()
 
 VALIDATORS_PACKAGE = "validators"
 VALIDATORS_PATH = Path(__file__).parent.parent / VALIDATORS_PACKAGE

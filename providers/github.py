@@ -4,11 +4,11 @@ from pathlib import Path, PurePosixPath
 from core.config import settings
 from providers.base import BaseValidatorProvider
 from schemas.validators import ValidatorDetail, ValidatorType
-from core.logging_config import setup_logging
 from utils.frontmatter import extract_frontmatter
+import structlog
 from utils.yaml import load_and_expand_yaml
 
-logger = setup_logging()
+logger = structlog.get_logger()
 
 class GithubValidatorProvider(BaseValidatorProvider):
 

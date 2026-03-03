@@ -26,13 +26,13 @@ try:
         return await task
 
 except ImportError:
-    import requests
+    import httpx
 
     class FakeResponse:
         def __init__(self, resp):
             self.status = resp.status_code
             self._text = resp.text
-            self._json = json.loads(resp.text)
+            self._json = resp.json()
 
         async def text(self): return self._text
         async def json(self): return self._json
@@ -41,12 +41,12 @@ except ImportError:
         def ok(self): return 200 <= self.status < 300
 
     async def fetch_func(url, body):
-        # Wrap the sync request in an async-compatible response
-        resp = requests.post(
-            url,
-            data=json.dumps(body),
-            headers={"Content-Type": "application/json"}
-        )
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url,
+                json=body,
+                headers={"Content-Type": "application/json"}
+            )
         return FakeResponse(resp)
 
 

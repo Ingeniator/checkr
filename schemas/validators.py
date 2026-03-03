@@ -1,7 +1,10 @@
-from pydantic import BaseModel, model_validator, HttpUrl
+from pydantic import BaseModel, Field, model_validator, HttpUrl
 from typing import Literal, Any
 
 from enum import Enum
+import structlog
+
+logger = structlog.get_logger()
 
 class ValidatorType(str, Enum):
     dataset_frontend = "dataset/frontend"
@@ -30,7 +33,18 @@ class DatasetValidationRequest(BaseModel):
     dataset: list[DataItem] | None = None  # list of data items
     dataset_url: HttpUrl | None = None  # link to dataset
     index: int | None = None # for validation per item
-    options: dict[str, Any] = {} # dict of options used by validators
+    options: dict[str, Any] = Field(default_factory=dict) # dict of options used by validators
+
+    @model_validator(mode='before')
+    @classmethod
+    def load_from_url_if_present(cls, values):
+        if values.get("dataset") is None and values.get("dataset_url"):
+            import httpx
+            resp = httpx.get(str(values["dataset_url"]), timeout=30)
+            resp.raise_for_status()
+            values["dataset"] = resp.json()
+            logger.info(f"Received dataset of size {len(values['dataset'])} from {values['dataset_url']}")
+        return values
 
     @model_validator(mode='before')
     @classmethod
@@ -39,22 +53,11 @@ class DatasetValidationRequest(BaseModel):
             raise ValueError("Either 'dataset' or 'dataset_url' must be provided.")
         return values
 
-    @model_validator(mode='before')
-    @classmethod
-    def load_from_url_if_present(cls, values):
-        if values.get("dataset") is None and values.get("dataset_url"):
-            import httpx
-            resp = httpx.get(values["dataset_url"], timeout=30)
-            resp.raise_for_status()
-            values["dataset"] = resp.json()
-            logger.info(f"Received dataset of size {len(dataset)} from {request.dataset_url}")
-        return values
-
 class DatasetGroupValidationRequest(DatasetValidationRequest):
     dataset: list[DataItem]
     index: int | None = None
-    options: dict[str, Any] = {}
-    gates: list[str] = [] # array of validator's source
+    options: dict[str, Any] = Field(default_factory=dict)
+    gates: list[str] = Field(default_factory=list) # array of validator's source
 
 class ValidatorDetail(BaseModel):
     source: str # works as uid
