@@ -1,0 +1,32 @@
+arrivalRate: 3
+---
+# Gabriel Rank (LLM-backed)
+- post:
+      url: "/api/v0/validate/backend/gate7_automatic_quality_grading/gabriel_rank_validator.py"
+      headers:
+          Content-Type: "application/json"
+      json:
+          dataset:
+            - messages:
+                - { role: "user", content: "Explain photosynthesis." }
+                - { role: "assistant", content: "Photosynthesis converts sunlight into chemical energy in plants using chlorophyll." }
+            - messages:
+                - { role: "user", content: "Explain photosynthesis." }
+                - { role: "assistant", content: "Plants use light to make food. It happens in leaves." }
+            - messages:
+                - { role: "user", content: "Explain photosynthesis." }
+                - { role: "assistant", content: "It is a process." }
+            - messages:
+                - { role: "user", content: "What is gravity?" }
+                - { role: "assistant", content: "Gravity is a fundamental force that attracts objects with mass toward each other." }
+            - messages:
+                - { role: "user", content: "What is gravity?" }
+                - { role: "assistant", content: "Gravity pulls things down. Earth has gravity." }
+            - messages:
+                - { role: "user", content: "What is gravity?" }
+                - { role: "assistant", content: "It makes stuff fall." }
+          options:
+              use_dummy: true
+              n_rounds: 3
+              min_group_size: 3
+              fail_on_outliers: true

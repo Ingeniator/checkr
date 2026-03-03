@@ -1,0 +1,28 @@
+arrivalRate: 3
+---
+# Gabriel Rate (LLM-backed)
+- post:
+    url: "/api/v0/validate/backend/gate7_automatic_quality_grading/gabriel_rate_validator.py"
+    headers:
+      Content-Type: "application/json"
+    json:
+      dataset:
+        - messages:
+            - { role: "user", content: "What is machine learning?" }
+            - { role: "assistant", content: "Machine learning is a subset of AI that enables systems to learn from data." }
+        - messages:
+            - { role: "user", content: "Explain Python." }
+            - { role: "assistant", content: "Python is a high-level, interpreted programming language known for readability." }
+        - messages:
+            - { role: "user", content: "What is Docker?" }
+            - { role: "assistant", content: "Docker containerizes applications for consistent deployment across environments." }
+        - messages:
+            - { role: "user", content: "What is an API?" }
+            - { role: "assistant", content: "An API is an application programming interface that allows systems to communicate." }
+        - messages:
+            - { role: "user", content: "What is CI/CD?" }
+            - { role: "assistant", content: "CI/CD automates testing and deployment for faster software delivery." }
+      options:
+        use_dummy: true
+        score_threshold: 70
+        n_runs: 1
