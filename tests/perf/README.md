@@ -56,6 +56,30 @@ PERF_REGRESSION_THRESHOLD=30 make perf-test
 5. `make perf-test` — compare against baseline, see regressions or improvements
 6. `make perf-baseline` — update baseline after intentional changes
 
+## Large-Payload Test
+
+A ~10MB synthetic dataset is generated before each test run to verify Checkr handles large HTTP request bodies. The generated scenario file (`scenarios/20_large_validate_generated.yml`) is cleaned up automatically after the test.
+
+### Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `LARGE_PAYLOAD_ENABLED` | `1` | Set to `0` to skip the large-payload test |
+| `LARGE_PAYLOAD_SIZE_MB` | `10` | Target JSON body size in MB |
+| `LARGE_PAYLOAD_ITEMS` | `200` | Number of DataItems in the dataset |
+| `LARGE_PAYLOAD_MSGS` | `10` | Messages per DataItem (even number) |
+| `LARGE_PAYLOAD_RATE` | `1` | arrivalRate (must be unique across scenarios) |
+
+### Examples
+
+```bash
+# Skip large-payload test
+LARGE_PAYLOAD_ENABLED=0 make perf-test
+
+# Use a 5MB payload instead of the default 10MB
+LARGE_PAYLOAD_SIZE_MB=5 make perf-test
+```
+
 ## Project Structure
 
 ```
@@ -72,10 +96,12 @@ tests/perf/
 │   ├── 07_gate8_guardrail.yml
 │   ├── 08_multi_gate.yml
 │   ├── 09_submit.yml
-│   └── 10_geval.yml
+│   ├── 10_geval.yml
+│   └── 20_large_validate_generated.yml  # GENERATED (gitignored)
 ├── assemble.py             # Merges config + scenarios → artillery.yml
+├── gen_large_payload.py    # Generates large-payload scenario
 ├── artillery.yml           # GENERATED (gitignored)
-├── run.sh                  # Orchestrates assemble, artillery, compare
+├── run.sh                  # Orchestrates generate, assemble, artillery, compare
 ├── compare.py              # Baseline vs. latest comparison
 ├── baseline.json           # Committed reference result
 ├── latest.json             # Ephemeral last-run result (gitignored)
@@ -88,7 +114,9 @@ tests/perf/
 |---|---|---|
 | `config.yml` | Yes | Base Artillery config (target, phases, thresholds) |
 | `scenarios/*.yml` | Yes | Modular scenario fragments, one per endpoint group |
+| `scenarios/*_generated.yml` | No | Generated scenarios (gitignored, cleaned up after test) |
 | `assemble.py` | Yes | Merges config + scenarios into `artillery.yml` |
+| `gen_large_payload.py` | Yes | Generates large-payload scenario (~10MB) |
 | `artillery.yml` | No | Generated Artillery config (gitignored) |
 | `compare.py` | Yes | Baseline vs. latest comparison script |
 | `baseline.json` | Yes | Committed reference result |

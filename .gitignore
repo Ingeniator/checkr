@@ -6,4 +6,5 @@ core/__pycache__/*.pyc
 static/pyodide/*
 tests/perf/latest_*.json
 tests/perf/artillery_*.yml
+tests/perf/scenarios/*_generated.yml
 __pycache__/*.pyc

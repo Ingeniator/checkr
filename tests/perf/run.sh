@@ -23,6 +23,7 @@ cleanup() {
     echo "--- Cleaning up ---"
     [ -n "$CHECKR_PID" ]   && kill "$CHECKR_PID"   2>/dev/null || true
     [ -n "$MOCK_LLM_PID" ] && kill "$MOCK_LLM_PID" 2>/dev/null || true
+    rm -f "$SCRIPT_DIR"/scenarios/*_generated.yml
     wait 2>/dev/null || true
 }
 trap cleanup EXIT
@@ -74,11 +75,15 @@ CHECKR_PORT=$CHECKR_PORT CHECKR_ROOT_PATH="" GEVAL_API_KEY=mock-key \
 CHECKR_PID=$!
 wait_for_health "http://localhost:$CHECKR_PORT/health" "Checkr"
 
-# 3. Assemble Artillery configs (one per unique arrivalRate)
+# 3. Generate large-payload scenario (if enabled)
+echo "--- Generating large-payload scenario ---"
+$UV_RUN python "$SCRIPT_DIR/gen_large_payload.py"
+
+# 4. Assemble Artillery configs (one per unique arrivalRate)
 echo "--- Assembling Artillery configs ---"
 CONFIGS=$($UV_RUN python "$SCRIPT_DIR/assemble.py")
 
-# 4. Run each config sequentially
+# 5. Run each config sequentially
 echo "--- Running Artillery load tests ---"
 OVERALL_EXIT=0
 for cfg in $CONFIGS; do
@@ -94,6 +99,6 @@ if [ $OVERALL_EXIT -ne 0 ]; then
     exit $OVERALL_EXIT
 fi
 
-# 5. Compare against baselines
+# 6. Compare against baselines
 $UV_RUN python "$SCRIPT_DIR/compare.py"
 exit $?

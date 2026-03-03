@@ -1,0 +1,531 @@
+{
+  "aggregate": {
+    "counters": {
+      "vusers.created_by_name.Full API coverage": 15,
+      "vusers.created": 15,
+      "http.requests": 15,
+      "http.codes.200": 15,
+      "http.responses": 15,
+      "http.downloaded_bytes": 1650,
+      "plugins.metrics-by-endpoint./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py.codes.200": 15,
+      "vusers.failed": 0,
+      "vusers.completed": 15
+    },
+    "rates": {
+      "http.request_rate": 1
+    },
+    "firstCounterAt": 1772546235984,
+    "firstHistogramAt": 1772546236635,
+    "lastCounterAt": 1772546251083,
+    "lastHistogramAt": 1772546251083,
+    "firstMetricAt": 1772546235984,
+    "lastMetricAt": 1772546251083,
+    "period": 1772546250000,
+    "summaries": {
+      "http.response_time": {
+        "min": 24,
+        "max": 53,
+        "count": 15,
+        "mean": 31.2,
+        "p50": 26.8,
+        "median": 26.8,
+        "p75": 29.1,
+        "p90": 40.9,
+        "p95": 50.9,
+        "p99": 50.9,
+        "p999": 50.9
+      },
+      "http.response_time.2xx": {
+        "min": 24,
+        "max": 53,
+        "count": 15,
+        "mean": 31.2,
+        "p50": 26.8,
+        "median": 26.8,
+        "p75": 29.1,
+        "p90": 40.9,
+        "p95": 50.9,
+        "p99": 50.9,
+        "p999": 50.9
+      },
+      "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+        "min": 24,
+        "max": 53,
+        "count": 15,
+        "mean": 31.2,
+        "p50": 26.8,
+        "median": 26.8,
+        "p75": 29.1,
+        "p90": 40.9,
+        "p95": 50.9,
+        "p99": 50.9,
+        "p999": 50.9
+      },
+      "vusers.session_length": {
+        "min": 589.9,
+        "max": 1748.5,
+        "count": 15,
+        "mean": 949.6,
+        "p50": 742.6,
+        "median": 742.6,
+        "p75": 1176.4,
+        "p90": 1249.1,
+        "p95": 1249.1,
+        "p99": 1249.1,
+        "p999": 1249.1
+      }
+    },
+    "histograms": {
+      "http.response_time": {
+        "min": 24,
+        "max": 53,
+        "count": 15,
+        "mean": 31.2,
+        "p50": 26.8,
+        "median": 26.8,
+        "p75": 29.1,
+        "p90": 40.9,
+        "p95": 50.9,
+        "p99": 50.9,
+        "p999": 50.9
+      },
+      "http.response_time.2xx": {
+        "min": 24,
+        "max": 53,
+        "count": 15,
+        "mean": 31.2,
+        "p50": 26.8,
+        "median": 26.8,
+        "p75": 29.1,
+        "p90": 40.9,
+        "p95": 50.9,
+        "p99": 50.9,
+        "p999": 50.9
+      },
+      "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+        "min": 24,
+        "max": 53,
+        "count": 15,
+        "mean": 31.2,
+        "p50": 26.8,
+        "median": 26.8,
+        "p75": 29.1,
+        "p90": 40.9,
+        "p95": 50.9,
+        "p99": 50.9,
+        "p999": 50.9
+      },
+      "vusers.session_length": {
+        "min": 589.9,
+        "max": 1748.5,
+        "count": 15,
+        "mean": 949.6,
+        "p50": 742.6,
+        "median": 742.6,
+        "p75": 1176.4,
+        "p90": 1249.1,
+        "p95": 1249.1,
+        "p99": 1249.1,
+        "p999": 1249.1
+      }
+    }
+  },
+  "intermediate": [
+    {
+      "counters": {
+        "vusers.created_by_name.Full API coverage": 4,
+        "vusers.created": 4,
+        "http.requests": 3,
+        "http.codes.200": 3,
+        "http.responses": 3,
+        "http.downloaded_bytes": 330,
+        "plugins.metrics-by-endpoint./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py.codes.200": 3,
+        "vusers.failed": 0,
+        "vusers.completed": 3
+      },
+      "rates": {
+        "http.request_rate": 1
+      },
+      "http.request_rate": null,
+      "firstCounterAt": 1772546235984,
+      "firstHistogramAt": 1772546236635,
+      "lastCounterAt": 1772546239585,
+      "lastHistogramAt": 1772546238810,
+      "firstMetricAt": 1772546235984,
+      "lastMetricAt": 1772546239585,
+      "period": "1772546230000",
+      "summaries": {
+        "http.response_time": {
+          "min": 28,
+          "max": 51,
+          "count": 3,
+          "mean": 40,
+          "p50": 40.9,
+          "median": 40.9,
+          "p75": 40.9,
+          "p90": 40.9,
+          "p95": 40.9,
+          "p99": 40.9,
+          "p999": 40.9
+        },
+        "http.response_time.2xx": {
+          "min": 28,
+          "max": 51,
+          "count": 3,
+          "mean": 40,
+          "p50": 40.9,
+          "median": 40.9,
+          "p75": 40.9,
+          "p90": 40.9,
+          "p95": 40.9,
+          "p99": 40.9,
+          "p999": 40.9
+        },
+        "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+          "min": 28,
+          "max": 51,
+          "count": 3,
+          "mean": 40,
+          "p50": 40.9,
+          "median": 40.9,
+          "p75": 40.9,
+          "p90": 40.9,
+          "p95": 40.9,
+          "p99": 40.9,
+          "p999": 40.9
+        },
+        "vusers.session_length": {
+          "min": 652.7,
+          "max": 1253.9,
+          "count": 3,
+          "mean": 881.2,
+          "p50": 742.6,
+          "median": 742.6,
+          "p75": 742.6,
+          "p90": 742.6,
+          "p95": 742.6,
+          "p99": 742.6,
+          "p999": 742.6
+        }
+      },
+      "histograms": {
+        "http.response_time": {
+          "min": 28,
+          "max": 51,
+          "count": 3,
+          "mean": 40,
+          "p50": 40.9,
+          "median": 40.9,
+          "p75": 40.9,
+          "p90": 40.9,
+          "p95": 40.9,
+          "p99": 40.9,
+          "p999": 40.9
+        },
+        "http.response_time.2xx": {
+          "min": 28,
+          "max": 51,
+          "count": 3,
+          "mean": 40,
+          "p50": 40.9,
+          "median": 40.9,
+          "p75": 40.9,
+          "p90": 40.9,
+          "p95": 40.9,
+          "p99": 40.9,
+          "p999": 40.9
+        },
+        "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+          "min": 28,
+          "max": 51,
+          "count": 3,
+          "mean": 40,
+          "p50": 40.9,
+          "median": 40.9,
+          "p75": 40.9,
+          "p90": 40.9,
+          "p95": 40.9,
+          "p99": 40.9,
+          "p999": 40.9
+        },
+        "vusers.session_length": {
+          "min": 652.7,
+          "max": 1253.9,
+          "count": 3,
+          "mean": 881.2,
+          "p50": 742.6,
+          "median": 742.6,
+          "p75": 742.6,
+          "p90": 742.6,
+          "p95": 742.6,
+          "p99": 742.6,
+          "p999": 742.6
+        }
+      }
+    },
+    {
+      "counters": {
+        "http.requests": 11,
+        "vusers.created_by_name.Full API coverage": 10,
+        "vusers.created": 10,
+        "http.codes.200": 11,
+        "http.responses": 11,
+        "http.downloaded_bytes": 1210,
+        "plugins.metrics-by-endpoint./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py.codes.200": 11,
+        "vusers.failed": 0,
+        "vusers.completed": 11
+      },
+      "rates": {
+        "http.request_rate": 1
+      },
+      "http.request_rate": null,
+      "firstCounterAt": 1772546240115,
+      "firstHistogramAt": 1772546240761,
+      "lastCounterAt": 1772546249651,
+      "lastHistogramAt": 1772546249651,
+      "firstMetricAt": 1772546240115,
+      "lastMetricAt": 1772546249651,
+      "period": "1772546240000",
+      "summaries": {
+        "http.response_time": {
+          "min": 24,
+          "max": 53,
+          "count": 11,
+          "mean": 29.3,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 26.8,
+          "p90": 32.1,
+          "p95": 32.1,
+          "p99": 32.1,
+          "p999": 32.1
+        },
+        "http.response_time.2xx": {
+          "min": 24,
+          "max": 53,
+          "count": 11,
+          "mean": 29.3,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 26.8,
+          "p90": 32.1,
+          "p95": 32.1,
+          "p99": 32.1,
+          "p999": 32.1
+        },
+        "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+          "min": 24,
+          "max": 53,
+          "count": 11,
+          "mean": 29.3,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 26.8,
+          "p90": 32.1,
+          "p95": 32.1,
+          "p99": 32.1,
+          "p999": 32.1
+        },
+        "vusers.session_length": {
+          "min": 641.6,
+          "max": 1748.5,
+          "count": 11,
+          "mean": 1000.9,
+          "p50": 1153.1,
+          "median": 1153.1,
+          "p75": 1176.4,
+          "p90": 1249.1,
+          "p95": 1249.1,
+          "p99": 1249.1,
+          "p999": 1249.1
+        }
+      },
+      "histograms": {
+        "http.response_time": {
+          "min": 24,
+          "max": 53,
+          "count": 11,
+          "mean": 29.3,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 26.8,
+          "p90": 32.1,
+          "p95": 32.1,
+          "p99": 32.1,
+          "p999": 32.1
+        },
+        "http.response_time.2xx": {
+          "min": 24,
+          "max": 53,
+          "count": 11,
+          "mean": 29.3,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 26.8,
+          "p90": 32.1,
+          "p95": 32.1,
+          "p99": 32.1,
+          "p999": 32.1
+        },
+        "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+          "min": 24,
+          "max": 53,
+          "count": 11,
+          "mean": 29.3,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 26.8,
+          "p90": 32.1,
+          "p95": 32.1,
+          "p99": 32.1,
+          "p999": 32.1
+        },
+        "vusers.session_length": {
+          "min": 641.6,
+          "max": 1748.5,
+          "count": 11,
+          "mean": 1000.9,
+          "p50": 1153.1,
+          "median": 1153.1,
+          "p75": 1176.4,
+          "p90": 1249.1,
+          "p95": 1249.1,
+          "p99": 1249.1,
+          "p999": 1249.1
+        }
+      }
+    },
+    {
+      "counters": {
+        "vusers.created_by_name.Full API coverage": 1,
+        "vusers.created": 1,
+        "http.requests": 1,
+        "http.codes.200": 1,
+        "http.responses": 1,
+        "http.downloaded_bytes": 110,
+        "plugins.metrics-by-endpoint./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py.codes.200": 1,
+        "vusers.failed": 0,
+        "vusers.completed": 1
+      },
+      "rates": {
+        "http.request_rate": 1
+      },
+      "http.request_rate": null,
+      "firstCounterAt": 1772546250493,
+      "firstHistogramAt": 1772546251082,
+      "lastCounterAt": 1772546251083,
+      "lastHistogramAt": 1772546251083,
+      "firstMetricAt": 1772546250493,
+      "lastMetricAt": 1772546251083,
+      "period": "1772546250000",
+      "summaries": {
+        "http.response_time": {
+          "min": 26,
+          "max": 26,
+          "count": 1,
+          "mean": 26,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 25.8,
+          "p90": 25.8,
+          "p95": 25.8,
+          "p99": 25.8,
+          "p999": 25.8
+        },
+        "http.response_time.2xx": {
+          "min": 26,
+          "max": 26,
+          "count": 1,
+          "mean": 26,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 25.8,
+          "p90": 25.8,
+          "p95": 25.8,
+          "p99": 25.8,
+          "p999": 25.8
+        },
+        "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+          "min": 26,
+          "max": 26,
+          "count": 1,
+          "mean": 26,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 25.8,
+          "p90": 25.8,
+          "p95": 25.8,
+          "p99": 25.8,
+          "p999": 25.8
+        },
+        "vusers.session_length": {
+          "min": 589.9,
+          "max": 589.9,
+          "count": 1,
+          "mean": 589.9,
+          "p50": 584.2,
+          "median": 584.2,
+          "p75": 584.2,
+          "p90": 584.2,
+          "p95": 584.2,
+          "p99": 584.2,
+          "p999": 584.2
+        }
+      },
+      "histograms": {
+        "http.response_time": {
+          "min": 26,
+          "max": 26,
+          "count": 1,
+          "mean": 26,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 25.8,
+          "p90": 25.8,
+          "p95": 25.8,
+          "p99": 25.8,
+          "p999": 25.8
+        },
+        "http.response_time.2xx": {
+          "min": 26,
+          "max": 26,
+          "count": 1,
+          "mean": 26,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 25.8,
+          "p90": 25.8,
+          "p95": 25.8,
+          "p99": 25.8,
+          "p999": 25.8
+        },
+        "plugins.metrics-by-endpoint.response_time./api/v0/validate/backend/gate1_structural_validation/chat_struct_validator.py": {
+          "min": 26,
+          "max": 26,
+          "count": 1,
+          "mean": 26,
+          "p50": 25.8,
+          "median": 25.8,
+          "p75": 25.8,
+          "p90": 25.8,
+          "p95": 25.8,
+          "p99": 25.8,
+          "p999": 25.8
+        },
+        "vusers.session_length": {
+          "min": 589.9,
+          "max": 589.9,
+          "count": 1,
+          "mean": 589.9,
+          "p50": 584.2,
+          "median": 584.2,
+          "p75": 584.2,
+          "p90": 584.2,
+          "p95": 584.2,
+          "p99": 584.2,
+          "p999": 584.2
+        }
+      }
+    }
+  ]
+}
