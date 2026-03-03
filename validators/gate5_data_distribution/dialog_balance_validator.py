@@ -17,10 +17,8 @@ doc:
 """
 
 from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
+from utils.vega_charts import vega_histogram
 import pandas as pd
-import matplotlib.pyplot as plt
-import io
-import base64
 
 class DialogBalanceValidator(BaseValidator):
     async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
@@ -103,23 +101,15 @@ class DialogBalanceValidator(BaseValidator):
         self.report_progress(stage, total_stages)
 
         if len(errors) > 0:
-            # Optional: Create a distribution plot and attach it to errors for review
-            fig, ax = plt.subplots(figsize=(6, 4))
-            df["length"].plot(kind="hist", ax=ax, bins=10)
-            ax.set_title("Dialog Length Distribution")
-            ax.set_xlabel("Number of turns")
-            buf = io.BytesIO()
-            plt.tight_layout()
-            fig.savefig(buf, format="png")
-            plt.close(fig)
-            buf.seek(0)
-            img_data = base64.b64encode(buf.read()).decode("utf-8")
             errors.append(ValidationDetail(
                 index=None,
-                error="Dialog length distribution attached.",
-                code="dialog_length_plot",
-                field="data:image/png;base64," + img_data,
+                error=f"Dialog Length Distribution (n={len(df)})",
+                code="dialog_length_distribution",
                 severity="info",
+                chart=vega_histogram(
+                    df["length"].tolist(),
+                    title="Dialog Length Distribution",
+                ),
             ))
         stage+=1
         self.report_progress(stage, total_stages)

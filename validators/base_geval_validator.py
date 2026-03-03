@@ -11,11 +11,9 @@ from abc import ABC
 from collections import defaultdict
 from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 from utils.async_utils import gather_with_semaphore
-import matplotlib.pyplot as plt
+from utils.vega_charts import vega_histogram
 import html
 import re
-import io
-import base64
 from openai import AsyncOpenAI
 from core.config import settings
 from utils.yaml import load_and_expand_yaml
@@ -148,25 +146,16 @@ class BaseGEvalValidator(BaseValidator, ABC):
             self.report_progress(idx + 1, len(data))
 
         if errors and dialog_avg_scores:
-            fig, ax = plt.subplots(figsize=(6, 4))
-            ax.hist(dialog_avg_scores, bins=10, color="lightgreen", edgecolor="black")
-            ax.set_title(f"{self.score_title} Distribution")
-            ax.set_xlabel("Score")
-            ax.set_ylabel("Frequency")
-            ax.grid(True)
-
-            buf = io.BytesIO()
-            plt.tight_layout()
-            fig.savefig(buf, format="png")
-            plt.close(fig)
-            buf.seek(0)
-
             errors.append(ValidationDetail(
                 index=None,
-                code="score_distribution_plot",
-                error="Score distribution attached.",
-                field="data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8"),
+                code="score_distribution",
+                error=f"{self.score_title} Distribution (n={len(dialog_avg_scores)})",
                 severity="info",
+                chart=vega_histogram(
+                    dialog_avg_scores,
+                    title=f"{self.score_title} Distribution",
+                    threshold=threshold,
+                ),
             ))
 
         return errors

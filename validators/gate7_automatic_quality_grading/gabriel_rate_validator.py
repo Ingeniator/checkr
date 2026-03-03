@@ -20,12 +20,9 @@ doc:
 ---
 """
 
-import base64
-import io
-
-import matplotlib.pyplot as plt
 import pandas as pd
 
+from utils.vega_charts import vega_histogram
 from validators.base_gabriel_validator import BaseGabrielValidator, gabriel
 from validators.base_validator import MessagesItem, ValidationDetail
 
@@ -102,29 +99,17 @@ class GabrielRateValidator(BaseGabrielValidator):
 
         # Attach histogram on failures
         if errors and all_avg_scores:
-            fig, ax = plt.subplots(figsize=(6, 4))
-            ax.hist(all_avg_scores, bins=10, color="lightgreen", edgecolor="black")
-            ax.axvline(x=threshold, color="red", linestyle="--", label=f"Threshold ({threshold})")
-            ax.set_title("GABRIEL Quality Score Distribution")
-            ax.set_xlabel("Average Score")
-            ax.set_ylabel("Frequency")
-            ax.legend()
-            ax.grid(True)
-
-            buf = io.BytesIO()
-            plt.tight_layout()
-            fig.savefig(buf, format="png")
-            plt.close(fig)
-            buf.seek(0)
-
             errors.append(
                 ValidationDetail(
                     index=None,
-                    code="score_distribution_plot",
-                    error="Score distribution attached.",
-                    field="data:image/png;base64,"
-                    + base64.b64encode(buf.read()).decode("utf-8"),
+                    code="score_distribution",
+                    error=f"GABRIEL Quality Score Distribution (n={len(all_avg_scores)})",
                     severity="info",
+                    chart=vega_histogram(
+                        all_avg_scores,
+                        title="GABRIEL Quality Score Distribution",
+                        threshold=threshold,
+                    ),
                 )
             )
 

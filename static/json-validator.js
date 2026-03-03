@@ -415,10 +415,10 @@ class JsonValidator extends HTMLElement {
       }
     }
     const formatted = results.map(r => {
-      let resText = (typeof r.result === 'string') 
-        ? r.result 
+      let resText = (typeof r.result === 'string')
+        ? r.result
         : JSON.stringify(r.result, null, 2);
-        
+
       // If it's multiline and not already HTML-formatted, wrap in <pre>
       if (resText.includes('\n') && !resText.includes('<pre>')) {
         resText = `<pre>${resText}</pre>`;
@@ -432,14 +432,34 @@ class JsonValidator extends HTMLElement {
         // Replace the Base64 string with an <img> tag.
         resText = resText.replace(pattern, `<br><img src="${base64Str}" alt="Distribution Plot"><br>`);
       }
-      
+
       // Use <br> for line breaks
       return `🔍 <b>${r.validator}</b>:<br>${resText}`;
     }).join('<br><br>');
-    
+
     // Use innerHTML to render HTML tags (like <img>) in the output.
     this.output.innerHTML = formatted;
     this.progressOutput.style.display = "none";
+
+    // Render Vega-Lite charts from info items
+    if (typeof vegaEmbed !== 'undefined') {
+      for (const r of results) {
+        const res = r.result;
+        if (!res || typeof res !== 'object') continue;
+        const infoItems = res.info || [];
+        for (const item of infoItems) {
+          if (item.chart) {
+            const chartEl = document.createElement('div');
+            this.output.appendChild(chartEl);
+            try {
+              await vegaEmbed(chartEl, item.chart, { actions: false });
+            } catch (e) {
+              chartEl.textContent = `Chart render error: ${e.message}`;
+            }
+          }
+        }
+      }
+    }
     
     // Show submit button only if all validations passed
     this.submitBtn.style.display = allPassed ? 'inline-block' : 'none';

@@ -104,9 +104,14 @@ class TestGabrielRateValidator:
             result = await validator.validate(SAMPLE_DATA)
             assert result["status"] == "failed"
             errors = result["errors"]
-            # 5 items + 1 histogram
             score_errors = [e for e in errors if e.get("code") == "low_gabriel_score"]
             assert len(score_errors) == 5
+            # Histogram delivered as Vega-Lite chart in info channel
+            info = result.get("info", [])
+            charts = [i for i in info if i.get("code") == "score_distribution"]
+            assert len(charts) == 1
+            assert isinstance(charts[0]["chart"], dict)
+            assert charts[0]["chart"]["$schema"].startswith("https://vega.github.io/schema/vega-lite")
 
     @pytest.mark.asyncio
     async def test_rate_empty_data(self):

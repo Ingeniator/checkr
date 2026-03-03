@@ -54,6 +54,7 @@ class ValidationDetail(BaseModel):
     field: str |  None = None  # Optional: which field caused the error
     code: str | None = None   # Optional: machine-readable error code
     severity: str = "error"   # "error" triggers failure, "info" is informational only
+    chart: dict | None = None  # Optional Vega-Lite spec
 
 # Backward compatibility alias
 ValidationErrorDetail = ValidationDetail
