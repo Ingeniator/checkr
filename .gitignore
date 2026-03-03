@@ -4,3 +4,4 @@ core/__pycache__/*.pyc
 .env
 .snapshot.txt
 static/pyodide/*
+tests/perf/latest.json

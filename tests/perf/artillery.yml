@@ -4,6 +4,8 @@ config:
     - duration: 10
       arrivalRate: 2
       name: "Sustained load"
+  http:
+    timeout: 30
   ensure:
     thresholds:
       - http.response_time.p99: 5000

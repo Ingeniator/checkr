@@ -128,6 +128,11 @@ test-coverage:  ## Run tests with coverage report
 perf-test:  ## Run Artillery performance test
 	bash tests/perf/run.sh
 
+.PHONY: perf-baseline
+perf-baseline:  ## Save current perf result as baseline
+	cp tests/perf/latest.json tests/perf/baseline.json
+	@echo "Baseline updated. Commit tests/perf/baseline.json to save it."
+
 ## ---------- Deployment ----------
 
 .PHONY: deploy

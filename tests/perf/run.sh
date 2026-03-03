@@ -9,6 +9,16 @@ CHECKR_PORT=8080
 MOCK_LLM_PID=""
 CHECKR_PID=""
 
+# Support uv installed either as standalone binary or as Python package.
+# Override with UV_RUN env var if needed (e.g. UV_RUN="python3 -m uv run").
+if [ -z "${UV_RUN:-}" ]; then
+    if command -v uv &>/dev/null; then
+        UV_RUN="uv run"
+    else
+        UV_RUN="python3 -m uv run"
+    fi
+fi
+
 cleanup() {
     echo "--- Cleaning up ---"
     [ -n "$CHECKR_PID" ]   && kill "$CHECKR_PID"   2>/dev/null || true
@@ -16,6 +26,17 @@ cleanup() {
     wait 2>/dev/null || true
 }
 trap cleanup EXIT
+
+kill_port() {
+    local port="$1"
+    local pids
+    pids=$(lsof -ti:"$port" 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+        echo "Killing stale process(es) on :$port"
+        echo "$pids" | xargs kill 2>/dev/null || true
+        sleep 0.5
+    fi
+}
 
 wait_for_health() {
     local url="$1"
@@ -34,9 +55,13 @@ wait_for_health() {
 
 cd "$PROJECT_DIR"
 
+# Clean up any stale processes on our ports
+kill_port "$MOCK_LLM_PORT"
+kill_port "$CHECKR_PORT"
+
 # 1. Start mock LLM server
 echo "--- Starting mock LLM server on :$MOCK_LLM_PORT ---"
-python3 -m uvicorn tests.perf.mock_llm_server:app \
+$UV_RUN uvicorn tests.perf.mock_llm_server:app \
     --host 0.0.0.0 --port "$MOCK_LLM_PORT" --log-level warning &
 MOCK_LLM_PID=$!
 wait_for_health "http://localhost:$MOCK_LLM_PORT/health" "Mock LLM"
@@ -44,15 +69,21 @@ wait_for_health "http://localhost:$MOCK_LLM_PORT/health" "Mock LLM"
 # 2. Start checkr
 echo "--- Starting checkr on :$CHECKR_PORT ---"
 CHECKR_PORT=$CHECKR_PORT CHECKR_ROOT_PATH="" GEVAL_API_KEY=mock-key \
-    python3 -m uvicorn entrypoint:app \
+    $UV_RUN uvicorn entrypoint:app \
     --host 0.0.0.0 --port "$CHECKR_PORT" --log-level warning &
 CHECKR_PID=$!
 wait_for_health "http://localhost:$CHECKR_PORT/health" "Checkr"
 
 # 3. Run Artillery
 echo "--- Running Artillery load test ---"
-npx artillery run "$SCRIPT_DIR/artillery.yml"
+npx artillery run "$SCRIPT_DIR/artillery.yml" --output "$SCRIPT_DIR/latest.json"
 EXIT_CODE=$?
 
 echo "--- Artillery finished with exit code $EXIT_CODE ---"
-exit $EXIT_CODE
+if [ $EXIT_CODE -ne 0 ]; then
+    exit $EXIT_CODE
+fi
+
+# 4. Compare against baseline
+$UV_RUN python "$SCRIPT_DIR/compare.py"
+exit $?
