@@ -1,0 +1,13 @@
+arrivalRate: 10
+---
+# Read-only / metadata endpoints
+- get:
+    url: "/health"
+- get:
+    url: "/api/v0/list"
+- get:
+    url: "/api/v0/info/backend/gate1_structural_validation/chat_struct_validator.py"
+- get:
+    url: "/api/v0/raw/base"
+- get:
+    url: "/api/v0/raw/backend/gate1_structural_validation/chat_struct_validator.py"

@@ -1,0 +1,15 @@
+arrivalRate: 5
+---
+# Gate 4: Language Consistency
+- post:
+    url: "/api/v0/validate/backend/gate4_content_consistency/language_consistency_validator.py"
+    headers:
+      Content-Type: "application/json"
+    json:
+      dataset:
+        - messages:
+            - { role: "user", content: "Can you explain how machine learning algorithms work in practice?" }
+            - { role: "assistant", content: "Machine learning algorithms learn patterns from training data to make predictions." }
+        - messages:
+            - { role: "user", content: "What are the main benefits of using cloud computing services?" }
+            - { role: "assistant", content: "Cloud computing provides scalability, cost savings, and high availability." }

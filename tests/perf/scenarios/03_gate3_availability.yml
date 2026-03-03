@@ -1,0 +1,12 @@
+arrivalRate: 5
+---
+# Gate 3: Link Availability
+- post:
+    url: "/api/v0/validate/backend/gate3_availability/link_availability_validator.py"
+    headers:
+      Content-Type: "application/json"
+    json:
+      dataset:
+        - messages:
+            - { role: "user", content: "Check out http://localhost:8080/health for details." }
+            - { role: "assistant", content: "That link looks valid, thanks for sharing." }

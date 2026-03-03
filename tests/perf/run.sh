@@ -74,16 +74,26 @@ CHECKR_PORT=$CHECKR_PORT CHECKR_ROOT_PATH="" GEVAL_API_KEY=mock-key \
 CHECKR_PID=$!
 wait_for_health "http://localhost:$CHECKR_PORT/health" "Checkr"
 
-# 3. Run Artillery
-echo "--- Running Artillery load test ---"
-npx artillery run "$SCRIPT_DIR/artillery.yml" --output "$SCRIPT_DIR/latest.json"
-EXIT_CODE=$?
+# 3. Assemble Artillery configs (one per unique arrivalRate)
+echo "--- Assembling Artillery configs ---"
+CONFIGS=$($UV_RUN python "$SCRIPT_DIR/assemble.py")
 
-echo "--- Artillery finished with exit code $EXIT_CODE ---"
-if [ $EXIT_CODE -ne 0 ]; then
-    exit $EXIT_CODE
+# 4. Run each config sequentially
+echo "--- Running Artillery load tests ---"
+OVERALL_EXIT=0
+for cfg in $CONFIGS; do
+    tag=$(basename "$cfg" .yml | sed 's/artillery_//')
+    echo "--- Running $tag ---"
+    npx artillery run "$cfg" --output "$SCRIPT_DIR/latest_${tag}.json"
+    code=$?
+    echo "--- $tag finished with exit code $code ---"
+    if [ $code -ne 0 ]; then OVERALL_EXIT=$code; fi
+done
+
+if [ $OVERALL_EXIT -ne 0 ]; then
+    exit $OVERALL_EXIT
 fi
 
-# 4. Compare against baseline
+# 5. Compare against baselines
 $UV_RUN python "$SCRIPT_DIR/compare.py"
 exit $?

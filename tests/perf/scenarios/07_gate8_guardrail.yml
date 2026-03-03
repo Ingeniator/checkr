@@ -1,0 +1,15 @@
+arrivalRate: 5
+---
+# Gate 8: Guardrail Compliance
+- post:
+    url: "/api/v0/validate/backend/gate8_guardrail_compliance/guardrail_compliance_validator.py"
+    headers:
+      Content-Type: "application/json"
+    json:
+      dataset:
+        - messages:
+            - { role: "user", content: "Can you help me write a professional email to my colleague?" }
+            - { role: "assistant", content: "Of course! Here is a draft for a professional email." }
+        - messages:
+            - { role: "user", content: "How do I set up a Python virtual environment?" }
+            - { role: "assistant", content: "You can use python3 -m venv to create a virtual environment." }

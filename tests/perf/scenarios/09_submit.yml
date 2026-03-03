@@ -1,0 +1,12 @@
+arrivalRate: 5
+---
+# Submit
+- post:
+    url: "/api/v0/submit"
+    headers:
+      Content-Type: "application/json"
+    json:
+      status: "ok"
+      validated_gates:
+        - "backend/gate1_structural_validation/chat_struct_validator.py"
+      errors: []

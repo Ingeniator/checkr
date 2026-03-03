@@ -129,9 +129,13 @@ perf-test:  ## Run Artillery performance test
 	bash tests/perf/run.sh
 
 .PHONY: perf-baseline
-perf-baseline:  ## Save current perf result as baseline
-	cp tests/perf/latest.json tests/perf/baseline.json
-	@echo "Baseline updated. Commit tests/perf/baseline.json to save it."
+perf-baseline:  ## Save current perf results as baselines
+	@for f in tests/perf/latest_*.json; do \
+		tag=$$(basename "$$f" .json | sed 's/latest_//'); \
+		cp "$$f" "tests/perf/baseline_$${tag}.json"; \
+		echo "Saved baseline_$${tag}.json"; \
+	done
+	@echo "Baselines updated. Commit tests/perf/baseline_*.json to save them."
 
 ## ---------- Deployment ----------
 

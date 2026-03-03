@@ -1,0 +1,18 @@
+arrivalRate: 5
+---
+# Gate 2: Deduplication
+- post:
+    url: "/api/v0/validate/backend/gate2_deduplication_and_decontamination/deduplication_validator.py"
+    headers:
+      Content-Type: "application/json"
+    json:
+      dataset:
+        - messages:
+            - { role: "user", content: "What is machine learning?" }
+            - { role: "assistant", content: "Machine learning is a subset of AI." }
+        - messages:
+            - { role: "user", content: "Explain Python." }
+            - { role: "assistant", content: "Python is a high-level language." }
+        - messages:
+            - { role: "user", content: "What is Docker?" }
+            - { role: "assistant", content: "Docker containerizes applications." }

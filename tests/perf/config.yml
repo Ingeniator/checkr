@@ -1,0 +1,16 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 15
+      arrivalRate: 5
+      name: "Sustained load"
+  plugins:
+    metrics-by-endpoint: {}
+  http:
+    timeout: 30
+  ensure:
+    thresholds:
+      - http.response_time.p99: 5000
+    conditions:
+      - expression: "vusers.failed == 0"
+        strict: true

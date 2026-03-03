@@ -1,0 +1,22 @@
+arrivalRate: 5
+---
+# Multi-gate validation
+- post:
+    url: "/api/v0/validate"
+    headers:
+      Content-Type: "application/json"
+    json:
+      dataset:
+        - messages:
+            - { role: "user", content: "What is machine learning?" }
+            - { role: "assistant", content: "Machine learning is a subset of AI." }
+        - messages:
+            - { role: "user", content: "Explain Python." }
+            - { role: "assistant", content: "Python is a high-level language." }
+        - messages:
+            - { role: "user", content: "What is Docker?" }
+            - { role: "assistant", content: "Docker containerizes applications." }
+      gates:
+        - "backend/gate1_structural_validation/chat_struct_validator.py"
+        - "backend/gate2_deduplication_and_decontamination/deduplication_validator.py"
+        - "backend/gate6_quantity_check/quantity_size_validator.py"

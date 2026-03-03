@@ -1,0 +1,15 @@
+arrivalRate: 5
+---
+# Gate 6: Quantity/Size
+- post:
+    url: "/api/v0/validate/backend/gate6_quantity_check/quantity_size_validator.py"
+    headers:
+      Content-Type: "application/json"
+    json:
+      dataset:
+        - messages:
+            - { role: "user", content: "What is machine learning?" }
+            - { role: "assistant", content: "Machine learning is a subset of AI." }
+        - messages:
+            - { role: "user", content: "Explain Python." }
+            - { role: "assistant", content: "Python is a high-level language." }
