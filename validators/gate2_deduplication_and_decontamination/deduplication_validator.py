@@ -10,7 +10,7 @@ from validators.base_validator import BaseValidator, ValidationErrorDetail, Mess
 import json
 
 class DeduplicationValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         seen = {}
         errors: list[ValidationErrorDetail] = []
 

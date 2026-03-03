@@ -7,7 +7,8 @@ tags: [abstract]
 ---
 """
 
-from abc import ABC, abstractmethod
+import asyncio
+from abc import ABC
 from typing import Any
 from pydantic import BaseModel, field_validator, model_validator, ValidationError
 import time
@@ -126,9 +127,15 @@ class BaseValidator(ABC):
                 print(f"Report progress callback failed: {e}")
                 pass
 
-    @abstractmethod
+    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+        """Override for CPU-bound validators. Called in a thread pool."""
+        raise NotImplementedError("Override _validate_sync (CPU-bound) or _validate (IO-bound)")
+
     async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         """
-        Implement this in subclasses. Must return a error array if any
+        Default: offloads _validate_sync to a thread pool.
+        IO-bound subclasses override this directly.
         """
-        pass
+        if JsProxy is not None:  # Pyodide — no threading
+            return self._validate_sync(data)
+        return await asyncio.to_thread(self._validate_sync, data)

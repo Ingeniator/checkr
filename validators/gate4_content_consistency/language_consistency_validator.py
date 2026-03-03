@@ -33,7 +33,7 @@ class LanguageConsistencyValidator(BaseValidator):
         except Exception:
             return "unknown"
 
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
 
         # Optionally, use a global expected language (if set)

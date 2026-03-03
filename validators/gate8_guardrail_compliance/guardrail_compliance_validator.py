@@ -32,7 +32,7 @@ except ImportError:
     scrubadub = None
 
 class GuardrailComplianceValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
         errors: list[ValidationErrorDetail] = []
         total = sum(len(item.messages) for item in data)
         current = 0
