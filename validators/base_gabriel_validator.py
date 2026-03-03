@@ -17,7 +17,7 @@ import pandas as pd
 
 from core.config import settings
 from utils.yaml import load_and_expand_yaml
-from validators.base_validator import BaseValidator, MessagesItem, ValidationErrorDetail
+from validators.base_validator import BaseValidator, MessagesItem, ValidationDetail
 
 try:
     import gabriel
@@ -83,13 +83,13 @@ class BaseGabrielValidator(BaseValidator, ABC):
         result_df: pd.DataFrame,
         input_df: pd.DataFrame,
         data: list[MessagesItem],
-    ) -> list[ValidationErrorDetail]:
+    ) -> list[ValidationDetail]:
         """Interpret gabriel results into validation errors. Implemented by subclasses."""
 
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         if gabriel is None:
             return [
-                ValidationErrorDetail(
+                ValidationDetail(
                     error="GABRIEL library not installed. Install with: pip install openai-gabriel",
                     code="missing_dependency",
                 )
@@ -128,7 +128,7 @@ class BaseGabrielValidator(BaseValidator, ABC):
 
         except Exception as e:
             return [
-                ValidationErrorDetail(
+                ValidationDetail(
                     error=f"GABRIEL evaluation failed: {e}",
                     code="gabriel_error",
                 )

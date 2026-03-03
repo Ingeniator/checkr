@@ -48,11 +48,15 @@ class MessagesItem(BaseModel):
                 raise ValueError("Each message must be a dict with 'role' and 'content'")
         return value
 
-class ValidationErrorDetail(BaseModel):
+class ValidationDetail(BaseModel):
     error: str
     index: int | None = None  # None for general errors not tied to an item
     field: str |  None = None  # Optional: which field caused the error
     code: str | None = None   # Optional: machine-readable error code
+    severity: str = "error"   # "error" triggers failure, "info" is informational only
+
+# Backward compatibility alias
+ValidationErrorDetail = ValidationDetail
 
 class BaseValidator(ABC):
 
@@ -85,18 +89,21 @@ class BaseValidator(ABC):
                     }
                 dataset.append(validated)
 
-            errors = await self._validate(dataset)
+            results = await self._validate(dataset)
             self.report_stage(f"complete ({time.time() - start:.2f}s)")
-            if errors:
-                return {
-                    "status": "failed",
-                    "errors": [e.model_dump() if hasattr(e, "model_dump") else e.dict() for e in errors],
-                    "validator": self.__class__.__name__
-                }
-            return {
-                "status": "passed",
-                "validator": self.__class__.__name__
+
+            errors = [r for r in results if r.severity == "error"]
+            info = [r for r in results if r.severity == "info"]
+
+            response = {
+                "status": "failed" if errors else "passed",
+                "validator": self.__class__.__name__,
             }
+            if errors:
+                response["errors"] = [e.model_dump() if hasattr(e, "model_dump") else e.dict() for e in errors]
+            if info:
+                response["info"] = [i.model_dump() if hasattr(i, "model_dump") else i.dict() for i in info]
+            return response
         except Exception as e:
             return {
                     "status": "failed",
@@ -127,11 +134,11 @@ class BaseValidator(ABC):
                 print(f"Report progress callback failed: {e}")
                 pass
 
-    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         """Override for CPU-bound validators. Called in a thread pool."""
         raise NotImplementedError("Override _validate_sync (CPU-bound) or _validate (IO-bound)")
 
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         """
         Default: offloads _validate_sync to a thread pool.
         IO-bound subclasses override this directly.

@@ -8,7 +8,7 @@ tags: [availability, links, gate3]
 
 import re
 import asyncio
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 from utils.async_utils import gather_with_semaphore
 
 
@@ -25,7 +25,7 @@ except ImportError:
     JsException = Exception
 
 class LinkAvailabilityValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         max_concurrency = self.options.get("max_concurrency", 10)
 
         # Check if js.safeFetch exists; fallback to js.fetch
@@ -55,24 +55,24 @@ class LinkAvailabilityValidator(BaseValidator):
         results = await gather_with_semaphore(coros, max_concurrency=max_concurrency)
 
         # Phase 4: build errors from results
-        errors: list[ValidationErrorDetail] = []
+        errors: list[ValidationDetail] = []
         for (i, j, url), result in zip(url_tasks, results):
             if isinstance(result, JsException):
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=i,
                     field=f"messages[{j}].content",
                     error=f"JS fetch failed for {url}: {str(result)}",
                     code="fetch_error"
                 ))
             elif isinstance(result, BaseException):
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=i,
                     field=f"messages[{j}].content",
                     error=f"Python exception while fetching {url}: {str(result)}",
                     code="fetch_error"
                 ))
             elif not result.get("ok", False):
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=i,
                     field=f"messages[{j}].content",
                     error=f"URL {url} returned status {result.get('status')} or error: {result.get('error', '')}",

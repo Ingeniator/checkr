@@ -9,7 +9,7 @@ options:
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 from langdetect import detect, DetectorFactory
 import re
 
@@ -33,8 +33,8 @@ class LanguageConsistencyValidator(BaseValidator):
         except Exception:
             return "unknown"
 
-    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
-        errors: list[ValidationErrorDetail] = []
+    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationDetail]:
+        errors: list[ValidationDetail] = []
 
         # Optionally, use a global expected language (if set)
         try:
@@ -62,7 +62,7 @@ class LanguageConsistencyValidator(BaseValidator):
                 # Report unsupported languages (only if detected language is not 'unknown')
                 for j, (lang, snippet) in enumerate(detected):
                     if lang not in SUPPORTED_LANGUAGES and lang != "unknown":
-                        errors.append(ValidationErrorDetail(
+                        errors.append(ValidationDetail(
                             index=i,
                             field=f"messages[{j}].content",
                             error=f"Unsupported language '{lang}' detected: \"{snippet}\"",
@@ -74,7 +74,7 @@ class LanguageConsistencyValidator(BaseValidator):
                 assistant_examples = [(lang, snippet) for (r, (lang, snippet)) in zip(roles, detected) if r == "assistant"]
 
                 if user_examples and assistant_examples and user_examples[0][0] != assistant_examples[0][0]:
-                    errors.append(ValidationErrorDetail(
+                    errors.append(ValidationDetail(
                         index=i,
                         error=(
                             f"Mismatch between user and assistant message languages: "
@@ -88,7 +88,7 @@ class LanguageConsistencyValidator(BaseValidator):
                 if expected_lang:
                     for lang, snippet in detected:
                         if lang != expected_lang and lang != "unknown":
-                            errors.append(ValidationErrorDetail(
+                            errors.append(ValidationDetail(
                                 index=i,
                                 field=f"messages[{j}].content",
                                 error=(
@@ -100,7 +100,7 @@ class LanguageConsistencyValidator(BaseValidator):
                 # Check for garbled characters (e.g., Unicode replacement character)
                 for j, content in enumerate(contents):
                     if re.search(r"[�\uFFFD]", content):
-                        errors.append(ValidationErrorDetail(
+                        errors.append(ValidationDetail(
                             index=i,
                             field=f"messages[{j}].content",
                             error="Contains garbled or invalid characters (�)",
@@ -108,7 +108,7 @@ class LanguageConsistencyValidator(BaseValidator):
                         ))
 
             except Exception as e:
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=i,
                     error=f"Language detection error: {str(e)}",
                     code="detection_exception"

@@ -10,15 +10,15 @@ options:
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 from bert_score import score
 from textwrap import indent
 import html
 
 class BertScoreReferenceFreeValidator(BaseValidator):
 
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
-        errors: list[ValidationErrorDetail] = []
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
+        errors: list[ValidationDetail] = []
 
         # Options with defaults
         threshold = self.options.get("f1_threshold", 0.75)
@@ -46,7 +46,7 @@ class BertScoreReferenceFreeValidator(BaseValidator):
                     preview_pairs.append((u_snippet, a_snippet))
 
             if not assistant_outputs:
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=idx,
                     error="No user-assistant pairs found for BERTScore comparison.",
                     code="no_valid_pairs"
@@ -69,7 +69,7 @@ class BertScoreReferenceFreeValidator(BaseValidator):
 
                     # Summary stays in `error`
                     error_message = f"Low assistant relevance (avg F1={avg_f1:.3f} < {threshold})"
-                    errors.append(ValidationErrorDetail(
+                    errors.append(ValidationDetail(
                         index=idx,
                         field=f"{preview_block}",
                         error=error_message,
@@ -77,7 +77,7 @@ class BertScoreReferenceFreeValidator(BaseValidator):
                     ))
 
             except Exception as e:
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=idx,
                     error=f"BERTScore computation failed: {str(e)}",
                     code="bertscore_error"

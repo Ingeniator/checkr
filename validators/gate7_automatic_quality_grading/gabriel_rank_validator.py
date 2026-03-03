@@ -42,7 +42,7 @@ import numpy as np
 import pandas as pd
 
 from validators.base_gabriel_validator import BaseGabrielValidator, gabriel
-from validators.base_validator import MessagesItem, ValidationErrorDetail
+from validators.base_validator import MessagesItem, ValidationDetail
 
 
 class GabrielRankValidator(BaseGabrielValidator):
@@ -150,7 +150,7 @@ class GabrielRankValidator(BaseGabrielValidator):
         result_df: pd.DataFrame,
         input_df: pd.DataFrame,
         data: list[MessagesItem],
-    ) -> list[ValidationErrorDetail]:
+    ) -> list[ValidationDetail]:
         errors = []
         fail_on_outliers = self.options.get("fail_on_outliers", True)
         outlier_threshold = self.options.get("outlier_std_threshold", 1.5)
@@ -160,7 +160,7 @@ class GabrielRankValidator(BaseGabrielValidator):
         available_attrs = [a for a in attr_names if a in result_df.columns]
         if not available_attrs:
             return [
-                ValidationErrorDetail(
+                ValidationDetail(
                     error=f"No ranking columns found in GABRIEL output. Expected: {attr_names}",
                     code="gabriel_no_rankings",
                 )
@@ -260,38 +260,39 @@ class GabrielRankValidator(BaseGabrielValidator):
         available_attrs: list[str],
         fail_on_outliers: bool,
         outlier_threshold: float,
-    ) -> list[ValidationErrorDetail]:
-        errors = []
+    ) -> list[ValidationDetail]:
+        results = []
 
         for group_name, group_df in result_df.groupby("_rank_group"):
             report = self._build_ranking_report(group_df, available_attrs, group_label=str(group_name))
+
+            # Always emit ranking report as info
+            results.append(
+                ValidationDetail(
+                    error=report,
+                    code="gabriel_ranking_report",
+                    severity="info",
+                )
+            )
 
             if not fail_on_outliers:
                 continue
 
             prompt_snippet = str(group_name)[:60]
-            outliers = self._find_outliers(group_df, available_attrs, outlier_threshold)
-
-            if outliers:
-                # Include ranking context with the first outlier error
-                errors.append(
-                    ValidationErrorDetail(
-                        error=report,
-                        code="gabriel_ranking_report",
+            for item_index, score, mean, std, detail in self._find_outliers(
+                group_df, available_attrs, outlier_threshold
+            ):
+                results.append(
+                    ValidationDetail(
+                        index=item_index,
+                        error=f"Outlier for \"{prompt_snippet}\": score={score:.2f} "
+                              f"(mean={mean:.2f}, std={std:.2f}, "
+                              f"threshold={outlier_threshold} SD below mean). {detail}",
+                        code="gabriel_rank_outlier",
                     )
                 )
-                for item_index, score, mean, std, detail in outliers:
-                    errors.append(
-                        ValidationErrorDetail(
-                            index=item_index,
-                            error=f"Outlier for \"{prompt_snippet}\": score={score:.2f} "
-                                  f"(mean={mean:.2f}, std={std:.2f}, "
-                                  f"threshold={outlier_threshold} SD below mean). {detail}",
-                            code="gabriel_rank_outlier",
-                        )
-                    )
 
-        return errors
+        return results
 
     def _interpret_flat(
         self,
@@ -299,26 +300,26 @@ class GabrielRankValidator(BaseGabrielValidator):
         available_attrs: list[str],
         fail_on_outliers: bool,
         outlier_threshold: float,
-    ) -> list[ValidationErrorDetail]:
-        errors = []
-
-        if not fail_on_outliers:
-            return []
+    ) -> list[ValidationDetail]:
+        results = []
 
         report = self._build_ranking_report(result_df, available_attrs)
-        outliers = self._find_outliers(result_df, available_attrs, outlier_threshold)
 
-        if outliers:
-            # Include ranking context with outlier errors
-            errors.append(
-                ValidationErrorDetail(
-                    error=report,
-                    code="gabriel_ranking_report",
-                )
+        # Always emit ranking report as info
+        results.append(
+            ValidationDetail(
+                error=report,
+                code="gabriel_ranking_report",
+                severity="info",
             )
-            for item_index, score, mean, std, detail in outliers:
-                errors.append(
-                    ValidationErrorDetail(
+        )
+
+        if fail_on_outliers:
+            for item_index, score, mean, std, detail in self._find_outliers(
+                result_df, available_attrs, outlier_threshold
+            ):
+                results.append(
+                    ValidationDetail(
                         index=item_index,
                         error=f"Outlier: score={score:.2f} "
                               f"(mean={mean:.2f}, std={std:.2f}, "
@@ -327,4 +328,4 @@ class GabrielRankValidator(BaseGabrielValidator):
                     )
                 )
 
-        return errors
+        return results

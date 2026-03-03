@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from validators.base_gabriel_validator import BaseGabrielValidator, gabriel
-from validators.base_validator import MessagesItem, ValidationErrorDetail
+from validators.base_validator import MessagesItem, ValidationDetail
 
 
 class GabrielRateValidator(BaseGabrielValidator):
@@ -57,7 +57,7 @@ class GabrielRateValidator(BaseGabrielValidator):
         result_df: pd.DataFrame,
         input_df: pd.DataFrame,
         data: list[MessagesItem],
-    ) -> list[ValidationErrorDetail]:
+    ) -> list[ValidationDetail]:
         errors = []
         threshold = self.options.get("score_threshold", 70)
         attributes = self.options.get("attributes", {
@@ -69,7 +69,7 @@ class GabrielRateValidator(BaseGabrielValidator):
         available_attrs = [a for a in attr_names if a in result_df.columns]
         if not available_attrs:
             return [
-                ValidationErrorDetail(
+                ValidationDetail(
                     error=f"No attribute score columns found in GABRIEL output. Expected: {attr_names}",
                     code="gabriel_no_scores",
                 )
@@ -86,7 +86,7 @@ class GabrielRateValidator(BaseGabrielValidator):
             if avg_score < threshold:
                 breakdown = ", ".join(f"{a}={scores[a]:.1f}" for a in available_attrs)
                 errors.append(
-                    ValidationErrorDetail(
+                    ValidationDetail(
                         index=item_index,
                         error=f"Quality score too low (avg={avg_score:.1f} < {threshold}). Breakdown: {breakdown}",
                         code="low_gabriel_score",
@@ -113,12 +113,13 @@ class GabrielRateValidator(BaseGabrielValidator):
             buf.seek(0)
 
             errors.append(
-                ValidationErrorDetail(
+                ValidationDetail(
                     index=None,
                     code="score_distribution_plot",
                     error="Score distribution attached.",
                     field="data:image/png;base64,"
                     + base64.b64encode(buf.read()).decode("utf-8"),
+                    severity="info",
                 )
             )
 

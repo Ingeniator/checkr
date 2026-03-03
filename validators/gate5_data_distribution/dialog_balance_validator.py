@@ -11,15 +11,15 @@ options:
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
 import base64
 
 class DialogBalanceValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
-        errors: list[ValidationErrorDetail] = []
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
+        errors: list[ValidationDetail] = []
 
         # Extract configurable options with defaults
         min_length = self.options.get("min_length", 2)
@@ -51,7 +51,7 @@ class DialogBalanceValidator(BaseValidator):
             })
         
         if not dialogs:
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
                 error="No dialogs found in the dataset.",
                 code="empty_dataset"
@@ -65,13 +65,13 @@ class DialogBalanceValidator(BaseValidator):
         # Check 1: Distribution of dialog lengths
         avg_length = df["length"].mean()
         if avg_length < min_length:
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
                 error=f"Dialogs seem too short on average ({avg_length:.1f} turns).",
                 code="dialog_too_short"
             ))
         elif avg_length > max_length:
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
                 error=f"Dialogs seem excessively long on average ({avg_length:.1f} turns).",
                 code="long_dialogs"
@@ -83,13 +83,13 @@ class DialogBalanceValidator(BaseValidator):
         df["role_ratio"] = df["user_count"] / (df["assistant_count"] + 1e-6)  # avoid division by zero
         avg_ratio = df["role_ratio"].mean()
         if avg_ratio < min_ratio:
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
                 error=f"User messages are underrepresented (user/assistant ratio: {avg_ratio:.2f}).",
                 code="user_underrepresented"
             ))
         elif avg_ratio > max_ratio:
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
                 error=f"User messages are overrepresented (user/assistant ratio: {avg_ratio:.2f}).",
                 code="user_overrepresented"
@@ -109,11 +109,12 @@ class DialogBalanceValidator(BaseValidator):
             plt.close(fig)
             buf.seek(0)
             img_data = base64.b64encode(buf.read()).decode("utf-8")
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
-                error=f"Dialog length distribution plot attached as base64 PNG: data:image/png;base64,{img_data}",
+                error="Dialog length distribution attached.",
                 code="dialog_length_plot",
-                field="visualization",
+                field="data:image/png;base64," + img_data,
+                severity="info",
             ))
         stage+=1
         self.report_progress(stage, total_stages)

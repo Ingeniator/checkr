@@ -7,20 +7,20 @@ tags: [decontamination, deduplication, gate2]
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 import json
 
 class DeduplicationValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         seen = {}
-        errors: list[ValidationErrorDetail] = []
+        errors: list[ValidationDetail] = []
 
         for i, item in enumerate(data):
             # Convert the "messages" list into a JSON string for hashing
             try:
                 key = json.dumps([msg.model_dump() for msg in item.messages], sort_keys=True)
             except (TypeError, ValueError) as e:
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=i,
                     error=f"Unable to serialize messages for comparison: {e}",
                     code="serialization_error"
@@ -29,7 +29,7 @@ class DeduplicationValidator(BaseValidator):
 
             if key in seen:
                 errors.append(
-                    ValidationErrorDetail(
+                    ValidationDetail(
                         index=i,
                         error=f"Sample {i} is a duplicate of sample {seen[key]}.",
                         code="duplicate_sample"

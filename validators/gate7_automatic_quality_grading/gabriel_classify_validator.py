@@ -19,7 +19,7 @@ options:
 import pandas as pd
 
 from validators.base_gabriel_validator import BaseGabrielValidator, gabriel
-from validators.base_validator import MessagesItem, ValidationErrorDetail
+from validators.base_validator import MessagesItem, ValidationDetail
 
 
 class GabrielClassifyValidator(BaseGabrielValidator):
@@ -57,7 +57,7 @@ class GabrielClassifyValidator(BaseGabrielValidator):
         result_df: pd.DataFrame,
         input_df: pd.DataFrame,
         data: list[MessagesItem],
-    ) -> list[ValidationErrorDetail]:
+    ) -> list[ValidationDetail]:
         errors = []
         labels = self.options.get("labels", {
             "off_topic": "", "hallucinated": "", "incomplete": "", "repetitive": "",
@@ -68,7 +68,7 @@ class GabrielClassifyValidator(BaseGabrielValidator):
         available_labels = [lb for lb in label_names if lb in result_df.columns]
         if not available_labels:
             return [
-                ValidationErrorDetail(
+                ValidationDetail(
                     error=f"No label columns found in GABRIEL output. Expected: {label_names}",
                     code="gabriel_no_labels",
                 )
@@ -87,7 +87,7 @@ class GabrielClassifyValidator(BaseGabrielValidator):
             if triggered:
                 label_list = ", ".join(triggered)
                 errors.append(
-                    ValidationErrorDetail(
+                    ValidationDetail(
                         index=item_index,
                         error=f"Quality issues detected: [{label_list}]",
                         code="gabriel_quality_label",

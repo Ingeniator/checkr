@@ -31,9 +31,9 @@ class MockValidatorProvider(BaseValidatorProvider):
     async def fetch_frontend_validator_source(self, file_path: str) -> str:
         if file_path == f"{self.source_prefix}/mock-validator.py":
             return """
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 class MockValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         return []
 """
         return ""

@@ -77,16 +77,22 @@ async def _validate(gates: list[str], dataset: list[DataItem], options: dict[str
     results = await asyncio.gather(*(_run_gate(g) for g in gates))
 
     all_errors = []
+    all_info = []
     for result in results:
         logger.debug(result)
         if result["status"] == "failed":
             all_errors.extend(result["errors"])
+        if "info" in result:
+            all_info.extend(result["info"])
     logger.debug(f"validate_dataset {all_errors}")
-    return {
+    response = {
         "status": "ok" if not all_errors else "failed",
         "validated_gates": gates,
-        "errors": all_errors
+        "errors": all_errors,
     }
+    if all_info:
+        response["info"] = all_info
+    return response
 
 def proxy_request_headers(request: Request):
     request_headers_vars.set({"X-Group-ID": request.headers.get("X-Group-ID", "checkr/validators")})

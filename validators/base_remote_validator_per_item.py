@@ -8,7 +8,7 @@ tags: [abstract, remote]
 """
 
 from abc import ABC
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 from utils.async_utils import gather_with_semaphore
 import json
 import asyncio
@@ -35,7 +35,7 @@ class BaseRemoteValidatorPerItem(BaseValidator, ABC):
         super().__init__(*args, **kwargs)
         self.endpoint = getattr(self, "endpoint", None) or self.options.get("endpoint")
 
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         if not pyfetch:
             raise RuntimeError(f"{self.validator_name} requires pyodide HTTP support (pyfetch).")
 
@@ -49,9 +49,9 @@ class BaseRemoteValidatorPerItem(BaseValidator, ABC):
 
         completed = 0
 
-        async def validate_item(idx: int, item: MessagesItem) -> list[ValidationErrorDetail]:
+        async def validate_item(idx: int, item: MessagesItem) -> list[ValidationDetail]:
             nonlocal completed
-            item_errors: list[ValidationErrorDetail] = []
+            item_errors: list[ValidationDetail] = []
 
             resp = await fetch_func(self.endpoint, {"dataset": [item.model_dump()], "index": idx, "options": self.options})
 
@@ -65,7 +65,7 @@ class BaseRemoteValidatorPerItem(BaseValidator, ABC):
                         text = f"Could not extract body from response: {resp}"
                 except Exception as e:
                     text = f"Failed to parse response body: {e}"
-                item_errors.append(ValidationErrorDetail(
+                item_errors.append(ValidationDetail(
                     error=f"HTTP {resp.status}: {text}",
                     index=idx,
                     code="remote_http_error"
@@ -75,11 +75,11 @@ class BaseRemoteValidatorPerItem(BaseValidator, ABC):
                 if result.get("status") == "failed":
                     for err in result.get("errors", []):
                         if isinstance(err, dict):
-                            item_errors.append(ValidationErrorDetail(
+                            item_errors.append(ValidationDetail(
                                 **{**err, "index": err.get("index", idx)}
                             ))
                         else:
-                            item_errors.append(ValidationErrorDetail(
+                            item_errors.append(ValidationDetail(
                                 error=str(err),
                                 index=idx,
                                 code="remote_item_error"
@@ -92,10 +92,10 @@ class BaseRemoteValidatorPerItem(BaseValidator, ABC):
         coros = [validate_item(idx, item) for idx, item in enumerate(data)]
         results = await gather_with_semaphore(coros, max_concurrency=max_concurrency)
 
-        errors: list[ValidationErrorDetail] = []
+        errors: list[ValidationDetail] = []
         for result in results:
             if isinstance(result, BaseException):
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     error=f"Remote validation failed: {result}",
                     code="remote_item_error"
                 ))

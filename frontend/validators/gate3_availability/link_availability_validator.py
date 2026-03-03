@@ -8,7 +8,7 @@ tags: [availability, links, gate3]
 """
 
 import re
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 
 
 URL_PATTERN = re.compile(r"https?://[^\s]+")
@@ -24,8 +24,8 @@ except ImportError:
     JsException = Exception
 
 class LinkAvailabilityValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
-        errors: list[ValidationErrorDetail] = []
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
+        errors: list[ValidationDetail] = []
        
         total = sum(len(item.messages) for item in data)
 
@@ -58,21 +58,21 @@ class LinkAvailabilityValidator(BaseValidator):
                             result = fetch_func(url)
 
                         if not result.get("ok", False):
-                            errors.append(ValidationErrorDetail(
+                            errors.append(ValidationDetail(
                                 index=i,
                                 field=f"messages[{j}].content",
                                 error=f"URL {url} returned status {result.get('status')} or error: {result.get('error', '')}",
                                 code="unavailable_url"
                             ))
                     except JsException as e:
-                        errors.append(ValidationErrorDetail(
+                        errors.append(ValidationDetail(
                             index=i,
                             field=f"messages[{j}].content",
                             error=f"JS fetch failed for {url}: {str(e)}",
                             code="fetch_error"
                         ))
                     except Exception as e:
-                        errors.append(ValidationErrorDetail(
+                        errors.append(ValidationDetail(
                             index=i,
                             field=f"messages[{j}].content",
                             error=f"Python exception while fetching {url}: {str(e)}",

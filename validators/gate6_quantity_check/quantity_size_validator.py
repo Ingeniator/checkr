@@ -9,15 +9,15 @@ options:
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 
 class QuantitySizeValidator(BaseValidator):
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
-        errors: list[ValidationErrorDetail] = []
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
+        errors: list[ValidationDetail] = []
         # Minimum number of dialogs required for training; default is 50.
         min_samples = self.options.get("min_samples", 50)
         if len(data) < min_samples:
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
                 error=f"Dataset has only {len(data)} dialogs; at least {min_samples} are required.",
                 code="too_few_dialogs"
@@ -29,7 +29,7 @@ class QuantitySizeValidator(BaseValidator):
             # Assuming each dialog is stored under the key "messages"
             dialog = item.messages
             if len(dialog) < min_turns:
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=i,
                     field="messages",
                     error=f"Dialog {i} has only {len(dialog)} turn(s); at least {min_turns} are recommended.",

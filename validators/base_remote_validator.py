@@ -8,7 +8,7 @@ tags: [abstract, remote]
 """
 
 from abc import ABC
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 import json
 import asyncio
 
@@ -57,7 +57,7 @@ class BaseRemoteValidator(BaseValidator, ABC):
         super().__init__(*args, **kwargs)
         self.endpoint = getattr(self, "endpoint", None) or self.options.get("endpoint")
 
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         if not self.endpoint:
             raise ValueError(f"No 'endpoint' provided in options for {self.validator_name}.")
 
@@ -80,7 +80,7 @@ class BaseRemoteValidator(BaseValidator, ABC):
                     text = f"⚠️ Could not extract body from response: {resp}"
             except Exception as e:
                 text = f"⚠️ Failed to parse response body: {e}"
-            return [ValidationErrorDetail(
+            return [ValidationDetail(
                 error=f"Remote HTTP error {resp.status}: {text}",
                 index=None,
                 field=None,
@@ -99,20 +99,20 @@ class BaseRemoteValidator(BaseValidator, ABC):
         if status == "passed":
             return []
 
-        details: list[ValidationErrorDetail] = []
+        details: list[ValidationDetail] = []
         for err in raw_errors:
             if isinstance(err, dict):
                 try:
-                    details.append(ValidationErrorDetail(**err))
+                    details.append(ValidationDetail(**err))
                 except Exception as e:
-                    details.append(ValidationErrorDetail(
+                    details.append(ValidationDetail(
                         error=f"Unexpected error format: {json.dumps(err)} ({e})",
                         index=None,
                         field=None,
                         code="remote_error_parse"
                     ))
             else:
-                details.append(ValidationErrorDetail(
+                details.append(ValidationDetail(
                     error=str(err),
                     index=None,
                     field=None,

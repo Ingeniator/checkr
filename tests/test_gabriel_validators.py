@@ -216,8 +216,8 @@ GROUPED_SAMPLE_DATA = [
 class TestGabrielRankValidator:
 
     @pytest.mark.asyncio
-    async def test_rank_flat_no_outliers_passes(self):
-        """Flat mode with fail_on_outliers=False always passes."""
+    async def test_rank_flat_no_outliers_passes_with_info(self):
+        """Flat mode with fail_on_outliers=False passes but includes ranking info."""
         from validators.gate7_automatic_quality_grading.gabriel_rank_validator import (
             GabrielRankValidator,
         )
@@ -225,10 +225,16 @@ class TestGabrielRankValidator:
         validator = GabrielRankValidator(options={"min_items": 3, "fail_on_outliers": False})
         result = await validator.validate(SAMPLE_DATA)
         assert result["status"] == "passed"
+        # Ranking report in info channel
+        assert "info" in result
+        info = result["info"]
+        reports = [i for i in info if i.get("code") == "gabriel_ranking_report"]
+        assert len(reports) == 1
+        assert "#1" in reports[0]["error"]
 
     @pytest.mark.asyncio
     async def test_rank_flat_detects_outlier(self):
-        """Flat mode flags items far below the mean."""
+        """Flat mode flags items far below the mean, ranking in info."""
         from validators.gate7_automatic_quality_grading.gabriel_rank_validator import (
             GabrielRankValidator,
         )
@@ -249,14 +255,19 @@ class TestGabrielRankValidator:
             })
             result = await validator.validate(SAMPLE_DATA)
             assert result["status"] == "failed"
+            # Outlier in errors
             errors = result["errors"]
             outliers = [e for e in errors if e.get("code") == "gabriel_rank_outlier"]
             assert len(outliers) == 1
-            assert outliers[0]["index"] == 4  # last item
+            assert outliers[0]["index"] == 4
+            # Ranking report in info
+            assert "info" in result
+            reports = [i for i in result["info"] if i.get("code") == "gabriel_ranking_report"]
+            assert len(reports) == 1
 
     @pytest.mark.asyncio
     async def test_rank_flat_no_outliers_when_close(self):
-        """No outliers flagged when all scores are similar — passes."""
+        """No outliers flagged when all scores are similar — passes with info."""
         from validators.gate7_automatic_quality_grading.gabriel_rank_validator import (
             GabrielRankValidator,
         )
@@ -275,6 +286,7 @@ class TestGabrielRankValidator:
             })
             result = await validator.validate(SAMPLE_DATA)
             assert result["status"] == "passed"
+            assert "info" in result
 
     @pytest.mark.asyncio
     async def test_rank_too_few_items(self):
@@ -289,8 +301,8 @@ class TestGabrielRankValidator:
         assert any("requires at least" in e.get("error", "") for e in errors)
 
     @pytest.mark.asyncio
-    async def test_rank_grouped_no_outliers_passes(self):
-        """Grouped mode with fail_on_outliers=False passes."""
+    async def test_rank_grouped_no_outliers_passes_with_info(self):
+        """Grouped mode with fail_on_outliers=False passes with ranking info."""
         from validators.gate7_automatic_quality_grading.gabriel_rank_validator import (
             GabrielRankValidator,
         )
@@ -301,6 +313,10 @@ class TestGabrielRankValidator:
         })
         result = await validator.validate(GROUPED_SAMPLE_DATA)
         assert result["status"] == "passed"
+        # Ranking reports for each group in info
+        assert "info" in result
+        reports = [i for i in result["info"] if i.get("code") == "gabriel_ranking_report"]
+        assert len(reports) == 2
 
     @pytest.mark.asyncio
     async def test_rank_grouped_detects_outlier(self):
@@ -328,8 +344,9 @@ class TestGabrielRankValidator:
             errors = result["errors"]
             outliers = [e for e in errors if e.get("code") == "gabriel_rank_outlier"]
             assert len(outliers) == 2  # one outlier per group
-            # Ranking reports attached as context
-            reports = [e for e in errors if e.get("code") == "gabriel_ranking_report"]
+            # Ranking reports in info channel
+            assert "info" in result
+            reports = [i for i in result["info"] if i.get("code") == "gabriel_ranking_report"]
             assert len(reports) == 2
 
     @pytest.mark.asyncio
@@ -347,8 +364,8 @@ class TestGabrielRankValidator:
         assert any("at least" in e.get("error", "") for e in errors)
 
     @pytest.mark.asyncio
-    async def test_rank_equal_scores_passes(self):
-        """When all scores are identical, no outliers — passes."""
+    async def test_rank_equal_scores_passes_with_info(self):
+        """When all scores are identical, no outliers — passes with ranking info."""
         from validators.gate7_automatic_quality_grading.gabriel_rank_validator import (
             GabrielRankValidator,
         )
@@ -363,6 +380,7 @@ class TestGabrielRankValidator:
             validator = GabrielRankValidator(options={"min_items": 3, "fail_on_outliers": True})
             result = await validator.validate(SAMPLE_DATA)
             assert result["status"] == "passed"
+            assert "info" in result
 
 
 # --- GabrielDiscoverValidator ---

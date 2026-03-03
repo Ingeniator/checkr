@@ -17,7 +17,7 @@ options:
 import pandas as pd
 
 from validators.base_gabriel_validator import BaseGabrielValidator, gabriel
-from validators.base_validator import MessagesItem, ValidationErrorDetail
+from validators.base_validator import MessagesItem, ValidationDetail
 
 
 class GabrielDiscoverValidator(BaseGabrielValidator):
@@ -54,7 +54,7 @@ class GabrielDiscoverValidator(BaseGabrielValidator):
         result_df: pd.DataFrame,
         input_df: pd.DataFrame,
         data: list[MessagesItem],
-    ) -> list[ValidationErrorDetail]:
+    ) -> list[ValidationDetail]:
         errors = []
         fail_on_discovery = self.options.get("fail_on_discovery", False)
         min_frequency_pct = self.options.get("min_frequency_pct", 20)
@@ -106,7 +106,7 @@ class GabrielDiscoverValidator(BaseGabrielValidator):
             return []
 
         errors.append(
-            ValidationErrorDetail(
+            ValidationDetail(
                 error=f"Discovered quality patterns above {min_frequency_pct}% threshold:\n"
                 + "\n".join(summary_lines),
                 code="gabriel_discovered_patterns",
@@ -129,7 +129,7 @@ class GabrielDiscoverValidator(BaseGabrielValidator):
 
                 if item_patterns:
                     errors.append(
-                        ValidationErrorDetail(
+                        ValidationDetail(
                             index=item_index,
                             error=f"Patterns found: [{', '.join(item_patterns)}]",
                             code="gabriel_pattern_flagged",

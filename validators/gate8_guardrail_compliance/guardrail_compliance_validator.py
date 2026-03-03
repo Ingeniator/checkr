@@ -6,7 +6,7 @@ tags: [guardrails, toxicity, pii, safety, gate8]
 ---
 """
 
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 import re
 
 # Attempt to import better_profanity and scrubadub
@@ -32,8 +32,8 @@ except ImportError:
     scrubadub = None
 
 class GuardrailComplianceValidator(BaseValidator):
-    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
-        errors: list[ValidationErrorDetail] = []
+    def _validate_sync(self, data: list[MessagesItem]) -> list[ValidationDetail]:
+        errors: list[ValidationDetail] = []
         total = sum(len(item.messages) for item in data)
         current = 0
         for i, item in enumerate(data):
@@ -43,14 +43,14 @@ class GuardrailComplianceValidator(BaseValidator):
                 # Toxicity check using better-profanity
                 if profanity:
                     if profanity.contains_profanity(msg.content):
-                        errors.append(ValidationErrorDetail(
+                        errors.append(ValidationDetail(
                             index=i,
                             field=field_path,
                             error=f"Toxic content detected: \"{snippet}\"",
                             code="toxic_content"
                         ))
                 else:
-                    errors.append(ValidationErrorDetail(
+                    errors.append(ValidationDetail(
                         index=i,
                         field=field_path,
                         error="Profanity check failed: better_profanity not installed.",
@@ -62,14 +62,14 @@ class GuardrailComplianceValidator(BaseValidator):
                     # scrubadub.clean() returns a cleaned version of the text.
                     cleaned = scrubadub.clean(msg.content)
                     if cleaned != msg.content:
-                        errors.append(ValidationErrorDetail(
+                        errors.append(ValidationDetail(
                             index=i,
                             field=field_path,
                             error=f"Potential PII detected. Cleaned version: \"{cleaned[:30]}...\"",
                             code="pii_detected"
                         ))
                 else:
-                    errors.append(ValidationErrorDetail(
+                    errors.append(ValidationDetail(
                         index=i,
                         field=field_path,
                         error="PII check failed: scrubadub not installed.",
@@ -78,7 +78,7 @@ class GuardrailComplianceValidator(BaseValidator):
                 
                 # Example check: basic formatting issue (e.g., excessive markdown)
                 if re.search(r"([*_]{3,})", msg.content):
-                    errors.append(ValidationErrorDetail(
+                    errors.append(ValidationDetail(
                         index=i,
                         field=field_path,
                         error="Formatting issue: excessive markdown characters.",

@@ -9,7 +9,7 @@ tags: [abstract, geval, score_based, semantic]
 
 from abc import ABC
 from collections import defaultdict
-from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from validators.base_validator import BaseValidator, ValidationDetail, MessagesItem
 from utils.async_utils import gather_with_semaphore
 import matplotlib.pyplot as plt
 import html
@@ -68,7 +68,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
         match = re.search(self.score_regex, raw_output)
         return float(match.group(1)) if match else 0.0
 
-    async def _validate(self, data: list[MessagesItem]) -> list[ValidationErrorDetail]:
+    async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         errors = []
 
         model = self.config.get("model", "gpt-4")
@@ -88,7 +88,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
                     pairs.append((prev.content, curr.content))
 
             if not pairs:
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=idx,
                     error="No user-assistant pairs found.",
                     code="no_valid_pairs"
@@ -121,7 +121,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
         # Phase 4: score + threshold check
         for idx in range(len(data)):
             if idx in error_by_item:
-                errors.append(ValidationErrorDetail(
+                errors.append(ValidationDetail(
                     index=idx,
                     error=f"Evaluation failed: {error_by_item[idx]}",
                     code="eval_error"
@@ -138,7 +138,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
                         lines.append(f"assistant: \"{html.escape(a)}\"")
                     preview = html.escape("\n".join(lines))
 
-                    errors.append(ValidationErrorDetail(
+                    errors.append(ValidationDetail(
                         index=idx,
                         error=f"{self.score_title} too low (avg = {avg_score:.2f} < {threshold})",
                         field=f"<pre>{preview}</pre>",
@@ -161,11 +161,12 @@ class BaseGEvalValidator(BaseValidator, ABC):
             plt.close(fig)
             buf.seek(0)
 
-            errors.append(ValidationErrorDetail(
+            errors.append(ValidationDetail(
                 index=None,
                 code="score_distribution_plot",
                 error="Score distribution attached.",
-                field="data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8")
+                field="data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8"),
+                severity="info",
             ))
 
         return errors
