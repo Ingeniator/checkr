@@ -5,3 +5,4 @@ core/__pycache__/*.pyc
 .snapshot.txt
 static/pyodide/*
 tests/perf/latest.json
+__pycache__/*.pyc

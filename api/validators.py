@@ -8,6 +8,7 @@ from schemas.validators import DatasetGroupValidationRequest, ValidatorDetail, V
 from core.config import settings
 from typing import Any
 from validators.base_geval_validator import DynamicGEvalValidator, request_headers_vars
+import asyncio
 import structlog
 
 logger = structlog.get_logger().bind(module=__name__)
@@ -67,11 +68,16 @@ async def _validate(gates: list[str], dataset: list[DataItem], options: dict[str
             detail=f"Unknown gates requested: {', '.join(unknown)}"
         )
 
-    all_errors = []
-    for gate in gates:
+    raw_dataset = [item.model_dump() if hasattr(item, "model_dump") else item.dict() for item in dataset]
+
+    async def _run_gate(gate: str):
         validator = request_.app.state.backend_validators_dict[gate](options)
-        raw_dataset = [item.model_dump() if hasattr(item, "model_dump") else item.dict() for item in dataset]
-        result = await validator.validate(raw_dataset)
+        return await validator.validate(raw_dataset)
+
+    results = await asyncio.gather(*(_run_gate(g) for g in gates))
+
+    all_errors = []
+    for result in results:
         logger.debug(result)
         if result["status"] == "failed":
             all_errors.extend(result["errors"])

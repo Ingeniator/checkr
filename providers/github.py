@@ -5,6 +5,7 @@ from core.config import settings
 from providers.base import BaseValidatorProvider
 from schemas.validators import ValidatorDetail, ValidatorType
 from utils.frontmatter import extract_frontmatter
+from utils.async_utils import gather_with_semaphore
 import structlog
 from utils.yaml import load_and_expand_yaml
 
@@ -92,21 +93,34 @@ class GithubValidatorProvider(BaseValidatorProvider):
         self.non_base_validators = []
 
         items = await self._walk_tree()
+
+        # Phase 1: resolve symlinks sequentially (few items)
+        resolved_items: list[tuple[str, str]] = []  # (original_path, resolved_path)
         for item in items:
             file_path = item["path"]
             mode = item.get("mode")
             is_symlink = (mode == "120000")
 
-            resolved_path = file_path
             if is_symlink:
                 resolved_path = await self._resolve_symlink(item)
                 if not resolved_path:
                     logger.warning(f"Skipping unresolved symlink: {item['path']}")
                     continue
+                resolved_items.append((file_path, resolved_path))
+            else:
+                resolved_items.append((file_path, file_path))
+
+        # Phase 2: fetch all file contents concurrently
+        fetch_coros = [self._fetch_file_content(rp) for _, rp in resolved_items]
+        contents = await gather_with_semaphore(fetch_coros, max_concurrency=10)
+
+        # Phase 3: process results
+        for (_, resolved_path), content in zip(resolved_items, contents):
+            if isinstance(content, BaseException):
+                logger.warning(f"Skipping file {resolved_path} due to error: {content}")
+                continue
 
             try:
-                content = await self._fetch_file_content(resolved_path)
-                
                 self.content_dict[resolved_path] = content
                 front = extract_frontmatter(content)
 

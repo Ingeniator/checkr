@@ -8,7 +8,9 @@ tags: [abstract, geval, score_based, semantic]
 """
 
 from abc import ABC
+from collections import defaultdict
 from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from utils.async_utils import gather_with_semaphore
 import matplotlib.pyplot as plt
 import html
 import re
@@ -72,19 +74,20 @@ class BaseGEvalValidator(BaseValidator, ABC):
         model = self.config.get("model", "gpt-4")
         threshold = self.options.get("score_threshold", 70)
         preview_limit = self.options.get("preview_limit", 3)
+        max_concurrency = self.options.get("max_concurrency", 10)
         dialog_avg_scores = []
 
+        # Phase 1: collect all (item_idx, user, assistant) pairs and items with no pairs
+        calls = []  # (item_idx, user, assistant)
+        preview_map: dict[int, list[tuple[str, str]]] = {}
         for idx, item in enumerate(data):
-            user_inputs, assistant_outputs, preview_pairs = [], [], []
-
+            pairs = []
             for i in range(1, len(item.messages)):
                 curr, prev = item.messages[i], item.messages[i - 1]
                 if curr.role == "assistant" and prev.role == "user":
-                    user_inputs.append(prev.content)
-                    assistant_outputs.append(curr.content)
-                    preview_pairs.append((prev.content, curr.content))
+                    pairs.append((prev.content, curr.content))
 
-            if not assistant_outputs:
+            if not pairs:
                 errors.append(ValidationErrorDetail(
                     index=idx,
                     error="No user-assistant pairs found.",
@@ -92,20 +95,45 @@ class BaseGEvalValidator(BaseValidator, ABC):
                 ))
                 continue
 
-            try:
-                scores = []
-                for u, a in zip(user_inputs, assistant_outputs):
-                    prompt = self.format_prompt(u, a)
-                    raw = await self.call_llm(prompt, model)
-                    score = self._extract_score_from_output(raw)
-                    scores.append(score)
+            preview_map[idx] = pairs
+            for u, a in pairs:
+                calls.append((idx, u, a))
 
+        # Phase 2: fire all LLM calls concurrently with semaphore
+        async def _single_llm_call(user: str, assistant: str):
+            prompt = self.format_prompt(user, assistant)
+            raw = await self.call_llm(prompt, model)
+            return self._extract_score_from_output(raw)
+
+        coros = [_single_llm_call(u, a) for _, u, a in calls]
+        raw_results = await gather_with_semaphore(coros, max_concurrency=max_concurrency)
+
+        # Phase 3: regroup scores by item_idx
+        scores_by_item: dict[int, list[float]] = defaultdict(list)
+        error_by_item: dict[int, Exception] = {}
+        for (item_idx, _, _), result in zip(calls, raw_results):
+            if isinstance(result, BaseException):
+                if item_idx not in error_by_item:
+                    error_by_item[item_idx] = result
+            else:
+                scores_by_item[item_idx].append(result)
+
+        # Phase 4: score + threshold check
+        for idx in range(len(data)):
+            if idx in error_by_item:
+                errors.append(ValidationErrorDetail(
+                    index=idx,
+                    error=f"Evaluation failed: {error_by_item[idx]}",
+                    code="eval_error"
+                ))
+            elif idx in scores_by_item:
+                scores = scores_by_item[idx]
                 avg_score = sum(scores) / len(scores)
                 dialog_avg_scores.append(avg_score)
 
                 if avg_score < threshold:
                     lines = []
-                    for u, a in preview_pairs[:preview_limit]:
+                    for u, a in preview_map[idx][:preview_limit]:
                         lines.append(f"user: \"{html.escape(u)}\"")
                         lines.append(f"assistant: \"{html.escape(a)}\"")
                     preview = html.escape("\n".join(lines))
@@ -116,13 +144,6 @@ class BaseGEvalValidator(BaseValidator, ABC):
                         field=f"<pre>{preview}</pre>",
                         code=self.score_code
                     ))
-
-            except Exception as e:
-                errors.append(ValidationErrorDetail(
-                    index=idx,
-                    error=f"Evaluation failed: {e}",
-                    code="eval_error"
-                ))
 
             self.report_progress(idx + 1, len(data))
 

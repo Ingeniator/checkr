@@ -9,6 +9,7 @@ tags: [abstract, remote]
 
 from abc import ABC
 from validators.base_validator import BaseValidator, ValidationErrorDetail, MessagesItem
+from utils.async_utils import gather_with_semaphore
 import json
 import asyncio
 
@@ -42,18 +43,18 @@ class BaseRemoteValidatorPerItem(BaseValidator, ABC):
         if not endpoint:
             raise ValueError(f"No 'endpoint' provided in options for {self.validator_name}.")
 
-        errors: list[ValidationErrorDetail] = []
         total = len(data)
+        max_concurrency = self.options.get("max_concurrency", 10)
         self.report_stage(f"validating {total} items remotely")
 
-        for idx, item in enumerate(data):
-            # Report per-item progress
-            self.report_progress(idx + 1, total)
+        completed = 0
 
-            # Send single-item request
+        async def validate_item(idx: int, item: MessagesItem) -> list[ValidationErrorDetail]:
+            nonlocal completed
+            item_errors: list[ValidationErrorDetail] = []
+
             resp = await fetch_func(self.endpoint, {"dataset": [item.model_dump()], "index": idx, "options": self.options})
 
-            # HTTP error?
             if resp.status != 200:
                 try:
                     if hasattr(resp, "text"):
@@ -61,36 +62,45 @@ class BaseRemoteValidatorPerItem(BaseValidator, ABC):
                     elif hasattr(resp, "json"):
                         text = json.dumps(await resp.json())
                     else:
-                        text = f"⚠️ Could not extract body from response: {resp}"
+                        text = f"Could not extract body from response: {resp}"
                 except Exception as e:
-                    text = f"⚠️ Failed to parse response body: {e}"
-                errors.append(ValidationErrorDetail(
+                    text = f"Failed to parse response body: {e}"
+                item_errors.append(ValidationErrorDetail(
                     error=f"HTTP {resp.status}: {text}",
                     index=idx,
                     code="remote_http_error"
                 ))
-                continue
+            else:
+                result = await resp.json()
+                if result.get("status") == "failed":
+                    for err in result.get("errors", []):
+                        if isinstance(err, dict):
+                            item_errors.append(ValidationErrorDetail(
+                                **{**err, "index": err.get("index", idx)}
+                            ))
+                        else:
+                            item_errors.append(ValidationErrorDetail(
+                                error=str(err),
+                                index=idx,
+                                code="remote_item_error"
+                            ))
 
-            # Parse JSON
-            result = await resp.json()
-            status = result.get("status")
-            raw_errs = result.get("errors", [])
+            completed += 1
+            self.report_progress(completed, total)
+            return item_errors
 
-            if status == "failed":
-                # Wrap each returned error detail
-                for err in raw_errs:
-                    if isinstance(err, dict):
-                        # Merge remote detail with local index
-                        detail = ValidationErrorDetail(
-                            **{**err, "index": err.get("index", idx)}
-                        )
-                    else:
-                        detail = ValidationErrorDetail(
-                            error=str(err),
-                            index=idx,
-                            code="remote_item_error"
-                        )
-                    errors.append(detail)
+        coros = [validate_item(idx, item) for idx, item in enumerate(data)]
+        results = await gather_with_semaphore(coros, max_concurrency=max_concurrency)
+
+        errors: list[ValidationErrorDetail] = []
+        for result in results:
+            if isinstance(result, BaseException):
+                errors.append(ValidationErrorDetail(
+                    error=f"Remote validation failed: {result}",
+                    code="remote_item_error"
+                ))
+            else:
+                errors.extend(result)
 
         self.report_stage("complete")
         return errors
