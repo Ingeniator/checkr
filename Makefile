@@ -124,6 +124,10 @@ test:  ## Run tests
 test-coverage:  ## Run tests with coverage report
 	python3 -m uv run pytest --cov=.
 
+.PHONY: perf-test
+perf-test:  ## Run Artillery performance test
+	bash tests/perf/run.sh
+
 ## ---------- Deployment ----------
 
 .PHONY: deploy

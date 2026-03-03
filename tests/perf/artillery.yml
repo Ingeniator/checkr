@@ -1,0 +1,70 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 10
+      arrivalRate: 2
+      name: "Sustained load"
+  ensure:
+    thresholds:
+      - http.response_time.p99: 5000
+    conditions:
+      - expression: "vusers.failed == 0"
+        strict: true
+
+scenarios:
+  - name: "G-Eval with 20 LLM calls (5 items x 4 pairs)"
+    flow:
+      - post:
+          url: "/api/v0/g-eval"
+          headers:
+            Content-Type: "application/json"
+          json:
+            dataset:
+              - messages:
+                  - { role: "user", content: "What is machine learning?" }
+                  - { role: "assistant", content: "Machine learning is a subset of AI." }
+                  - { role: "user", content: "How does it work?" }
+                  - { role: "assistant", content: "It learns patterns from data." }
+                  - { role: "user", content: "Give an example." }
+                  - { role: "assistant", content: "Spam filtering uses ML." }
+                  - { role: "user", content: "What about deep learning?" }
+                  - { role: "assistant", content: "Deep learning uses neural networks." }
+              - messages:
+                  - { role: "user", content: "Explain Python." }
+                  - { role: "assistant", content: "Python is a high-level language." }
+                  - { role: "user", content: "What are its uses?" }
+                  - { role: "assistant", content: "Web dev, data science, automation." }
+                  - { role: "user", content: "Is it fast?" }
+                  - { role: "assistant", content: "It is easy to write but slower than C." }
+                  - { role: "user", content: "How to speed it up?" }
+                  - { role: "assistant", content: "Use NumPy or Cython." }
+              - messages:
+                  - { role: "user", content: "What is an API?" }
+                  - { role: "assistant", content: "An API is an application programming interface." }
+                  - { role: "user", content: "REST vs GraphQL?" }
+                  - { role: "assistant", content: "REST uses endpoints, GraphQL uses queries." }
+                  - { role: "user", content: "Which is better?" }
+                  - { role: "assistant", content: "Depends on use case." }
+                  - { role: "user", content: "Give a REST example." }
+                  - { role: "assistant", content: "GET /users returns a list of users." }
+              - messages:
+                  - { role: "user", content: "What is Docker?" }
+                  - { role: "assistant", content: "Docker containerizes applications." }
+                  - { role: "user", content: "Why use it?" }
+                  - { role: "assistant", content: "Consistent environments across machines." }
+                  - { role: "user", content: "Docker vs VMs?" }
+                  - { role: "assistant", content: "Containers are lighter than VMs." }
+                  - { role: "user", content: "What is Kubernetes?" }
+                  - { role: "assistant", content: "K8s orchestrates containers at scale." }
+              - messages:
+                  - { role: "user", content: "What is CI/CD?" }
+                  - { role: "assistant", content: "Continuous integration and delivery." }
+                  - { role: "user", content: "Why is it important?" }
+                  - { role: "assistant", content: "It automates testing and deployment." }
+                  - { role: "user", content: "Name a CI tool." }
+                  - { role: "assistant", content: "GitHub Actions is popular." }
+                  - { role: "user", content: "What about CD?" }
+                  - { role: "assistant", content: "ArgoCD handles continuous delivery." }
+            options:
+              prompt: "Rate the quality of this assistant response to the user query.\nUser: {user}\nAssistant: {assistant}\nProvide a score from 1-100."
+              score_threshold: 50
