@@ -12,6 +12,7 @@ dependencies = [
     "langdetect>=1.0.9",
     "matplotlib>=3.10.1",
     "openai>=1.78.1",
+    "openai-gabriel>=1.1.0",
     "pandas>=2.2.3",
     "prometheus-client>=0.21.1",
     "pydantic-settings>=2.8.1",
