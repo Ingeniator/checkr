@@ -44,8 +44,57 @@ class JsonValidator extends HTMLElement {
           box-sizing: border-box;
           padding: 8px;
         }
+        .input-tabs {
+          display: flex;
+          gap: 0;
+          margin-bottom: 0;
+        }
+        .input-tabs button {
+          padding: 6px 16px;
+          font-size: 0.9rem;
+          cursor: pointer;
+          border: 1px solid #ccc;
+          background: #e9e9e9;
+          color: #555;
+          margin: 0;
+          border-bottom: none;
+          border-radius: 6px 6px 0 0;
+        }
+        .input-tabs button.active {
+          background: #fff;
+          color: #111;
+          font-weight: 600;
+          border-bottom: 1px solid #fff;
+          position: relative;
+          z-index: 1;
+        }
+        .url-input-row {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .url-input-row input {
+          flex: 1;
+          padding: 8px;
+          font-family: monospace;
+          font-size: 0.9rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        }
+        .url-input-row button {
+          margin: 0;
+          white-space: nowrap;
+        }
       </style>
+      <div class="input-tabs">
+        <button id="tab-paste" class="active">Paste JSON</button>
+        <button id="tab-url">Load from URL</button>
+      </div>
       <textarea class="input-data" id="input" placeholder="Paste JSON here..."></textarea>
+      <div class="url-input-row" id="url-row" style="display: none;">
+        <input type="text" id="url-input" placeholder="https://example.com/dataset.json">
+        <button id="fetch-url">Fetch</button>
+      </div>
       <h2>Available Validators:</h2>
       <div id="validator-list"></div>
       <button id="validate" style="display: none;">Validate</button>
@@ -138,6 +187,48 @@ class JsonValidator extends HTMLElement {
     this.progressOutput = this.shadowRoot.querySelector("#progress");
     this.validateBtn.addEventListener('click', () => this.runValidation());
     this.submitBtn.addEventListener('click', () => this.postJson());
+
+    // Tab switching: Paste JSON vs Load from URL
+    this.inputMode = 'paste';
+    const tabPaste = this.shadowRoot.querySelector('#tab-paste');
+    const tabUrl = this.shadowRoot.querySelector('#tab-url');
+    const urlRow = this.shadowRoot.querySelector('#url-row');
+    this.urlInput = this.shadowRoot.querySelector('#url-input');
+
+    tabPaste.addEventListener('click', () => {
+      this.inputMode = 'paste';
+      tabPaste.classList.add('active');
+      tabUrl.classList.remove('active');
+      this.textarea.style.display = '';
+      urlRow.style.display = 'none';
+    });
+    tabUrl.addEventListener('click', () => {
+      this.inputMode = 'url';
+      tabUrl.classList.add('active');
+      tabPaste.classList.remove('active');
+      this.textarea.style.display = 'none';
+      urlRow.style.display = 'flex';
+    });
+
+    // Fetch button: load URL content into textarea for preview
+    this.shadowRoot.querySelector('#fetch-url').addEventListener('click', async () => {
+      const url = this.urlInput.value.trim();
+      if (!url) {
+        this.output.textContent = '❌ Please enter a URL.';
+        return;
+      }
+      try {
+        this.output.textContent = '⏳ Fetching URL…';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        const text = await res.text();
+        JSON.parse(text); // validate it's JSON
+        this.textarea.value = text;
+        this.output.textContent = '✅ JSON loaded from URL. Click Validate to proceed.';
+      } catch (e) {
+        this.output.textContent = `❌ Failed to fetch URL: ${e.message || e}`;
+      }
+    });
 
     initPyodide();  // kick off background loading without await
 
@@ -284,14 +375,34 @@ class JsonValidator extends HTMLElement {
       .filter(cb => cb.checked)
       .map(cb => cb.value);
 
-    const raw = this.textarea.value;
     let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
-      this.output.textContent = "❌ Invalid JSON";
-      this.submitBtn.style.display = 'none';
-      return;
+    if (this.inputMode === 'url') {
+      const url = this.urlInput.value.trim();
+      if (!url) {
+        this.output.textContent = '❌ Please enter a URL.';
+        this.submitBtn.style.display = 'none';
+        return;
+      }
+      try {
+        this.output.textContent = '⏳ Fetching dataset from URL…';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        const text = await res.text();
+        data = JSON.parse(text);
+      } catch (e) {
+        this.output.textContent = `❌ Failed to load URL: ${e.message || e}`;
+        this.submitBtn.style.display = 'none';
+        return;
+      }
+    } else {
+      const raw = this.textarea.value;
+      try {
+        data = JSON.parse(raw);
+      } catch (e) {
+        this.output.textContent = "❌ Invalid JSON";
+        this.submitBtn.style.display = 'none';
+        return;
+      }
     }
 
     const results = [];
