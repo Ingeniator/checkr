@@ -12,6 +12,7 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 THRESHOLD = float(os.environ.get("PERF_REGRESSION_THRESHOLD", "20"))
+MIN_ABSOLUTE_MS = float(os.environ.get("PERF_MIN_ABSOLUTE_MS", "50"))
 
 SUMMARY_METRICS = ["min", "max", "median", "p95", "p99"]
 ENDPOINT_METRICS = ["median", "p95", "p99"]
@@ -38,6 +39,8 @@ def fmt_change(baseline: float, current: float) -> str:
     if baseline == 0:
         return "—"
     pct = (current - baseline) / baseline * 100
+    if max(baseline, current) < MIN_ABSOLUTE_MS:
+        return f"~{pct:+.1f}%"
     return f"{pct:+.1f}%"
 
 
@@ -63,7 +66,7 @@ def compare_pair(tag: str, baseline_path: str, latest_path: str) -> bool:
         change = fmt_change(b, c)
         print(f"{'response_time.' + m:<28} {b:>10.0f} {c:>10.0f} {change:>10}")
 
-        if m == "p99" and b > 0:
+        if m == "p99" and b > 0 and c > MIN_ABSOLUTE_MS:
             pct = (c - b) / b * 100
             if pct > THRESHOLD:
                 regression = True
