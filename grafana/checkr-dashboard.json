@@ -1,0 +1,344 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus" },
+    { "type": "panel", "id": "timeseries", "name": "Time series" },
+    { "type": "panel", "id": "stat", "name": "Stat" },
+    { "type": "panel", "id": "table", "name": "Table" }
+  ],
+  "id": null,
+  "uid": "checkr-overview",
+  "title": "checkr Overview",
+  "description": "Validation gate metrics: pass/fail rates, error codes, execution latency, and HTTP health",
+  "tags": ["checkr", "prometheus"],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": "${DS_PROMETHEUS}",
+        "query": "label_values(http_requests_total{job=\"checkr\"}, instance)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "gate",
+        "type": "query",
+        "datasource": "${DS_PROMETHEUS}",
+        "query": "label_values(checkr_validation_results_total, gate)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "HTTP Overview",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "title": "Request Rate",
+      "type": "stat",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "thresholds": { "steps": [{ "color": "green", "value": null }] } },
+        "overrides": []
+      },
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "title": "Error Rate (5xx)",
+      "type": "stat",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.01 }] }
+        },
+        "overrides": []
+      },
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"checkr\", instance=~\"$instance\", status_code=~\"5..\"}[$__rate_interval]))",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "title": "P95 Latency",
+      "type": "stat",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 30 }] }
+        },
+        "overrides": []
+      },
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval])) by (le))",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "title": "Validation Pass Rate",
+      "type": "stat",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.8 }, { "color": "green", "value": 0.95 }] }
+        },
+        "overrides": []
+      },
+      "options": { "graphMode": "area", "colorMode": "background", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        {
+          "expr": "sum(rate(checkr_validation_results_total{status=\"passed\", gate=~\"$gate\"}[$__rate_interval])) / sum(rate(checkr_validation_results_total{gate=~\"$gate\"}[$__rate_interval]))",
+          "legendFormat": ""
+        }
+      ]
+    },
+    {
+      "title": "",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "title": "Request Rate by Endpoint",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 15, "stacking": { "mode": "normal" } } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } },
+      "targets": [
+        {
+          "expr": "sum by (endpoint) (rate(http_requests_total{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{ endpoint }}"
+        }
+      ]
+    },
+    {
+      "title": "Request Rate by Status Code",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "fillOpacity": 15, "stacking": { "mode": "normal" } } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "2.." }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "4.." }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "5.." }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } },
+      "targets": [
+        {
+          "expr": "sum by (status_code) (rate(http_requests_total{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{ status_code }}"
+        }
+      ]
+    },
+    {
+      "title": "Request Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "title": "Latency by Endpoint (p95)",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, endpoint) (rate(http_request_duration_seconds_bucket{job=\"checkr\", instance=~\"$instance\"}[$__rate_interval])))",
+          "legendFormat": "{{ endpoint }}"
+        }
+      ]
+    },
+    {
+      "title": "Validation Gates",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "title": "Pass / Fail by Gate",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "fillOpacity": 15, "stacking": { "mode": "normal" } } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*passed.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*failed.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] } },
+      "targets": [
+        {
+          "expr": "sum by (gate, status) (rate(checkr_validation_results_total{gate=~\"$gate\"}[$__rate_interval]))",
+          "legendFormat": "{{ gate }} ({{ status }})"
+        }
+      ]
+    },
+    {
+      "title": "Pass Rate by Gate Over Time",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0, "max": 1,
+          "custom": { "fillOpacity": 10 },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.8 }, { "color": "green", "value": 0.95 }] }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "min"] } },
+      "targets": [
+        {
+          "expr": "sum by (gate) (rate(checkr_validation_results_total{status=\"passed\", gate=~\"$gate\"}[$__rate_interval])) / sum by (gate) (rate(checkr_validation_results_total{gate=~\"$gate\"}[$__rate_interval]))",
+          "legendFormat": "{{ gate }}"
+        }
+      ]
+    },
+    {
+      "title": "",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "title": "Validation Errors by Code",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 32 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "fillOpacity": 15, "stacking": { "mode": "normal" } } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] } },
+      "targets": [
+        {
+          "expr": "sum by (gate, code) (rate(checkr_validation_errors_total{gate=~\"$gate\"}[$__rate_interval]))",
+          "legendFormat": "{{ gate }} / {{ code }}"
+        }
+      ]
+    },
+    {
+      "title": "Items Validated / min",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 32 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "fillOpacity": 15, "stacking": { "mode": "normal" } } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] } },
+      "targets": [
+        {
+          "expr": "sum by (gate) (rate(checkr_validation_items_total{gate=~\"$gate\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{ gate }}"
+        }
+      ]
+    },
+    {
+      "title": "Validation Duration by Gate (p50 / p95 / p99)",
+      "type": "timeseries",
+      "datasource": "${DS_PROMETHEUS}",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 32 },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 10 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le, gate) (rate(checkr_validation_duration_seconds_bucket{gate=~\"$gate\"}[$__rate_interval])))",
+          "legendFormat": "{{ gate }} p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, gate) (rate(checkr_validation_duration_seconds_bucket{gate=~\"$gate\"}[$__rate_interval])))",
+          "legendFormat": "{{ gate }} p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, gate) (rate(checkr_validation_duration_seconds_bucket{gate=~\"$gate\"}[$__rate_interval])))",
+          "legendFormat": "{{ gate }} p99"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}
