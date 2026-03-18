@@ -1,0 +1,177 @@
+# Prometheus alerting rules for checkr
+# Add to your Prometheus config:  rule_files: ["alert_rules.yml"]
+
+groups:
+  # ── HTTP Error Rate ──────────────────────────────────────────────────
+  - name: checkr_error_rate
+    rules:
+      - alert: CheckrHighErrorRate5xx
+        expr: |
+          (
+            sum(rate(http_requests_total{job="checkr", status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="checkr"}[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: checkr
+        annotations:
+          summary: "High 5xx error rate ({{ $value | humanizePercentage }})"
+          description: "More than 5% of checkr requests are returning 5xx errors."
+
+      - alert: CheckrValidationEndpointErrors
+        expr: |
+          (
+            sum(rate(http_requests_total{job="checkr", endpoint=~"/api/v0/validate.*", status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="checkr", endpoint=~"/api/v0/validate.*"}[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: checkr
+        annotations:
+          summary: "Validation endpoint 5xx rate elevated ({{ $value | humanizePercentage }})"
+          description: "The /api/v0/validate endpoint has >5% 5xx rate — validations are failing."
+
+  # ── Validation Gate Failures ────────────────────────────────────────
+  - name: checkr_validation
+    rules:
+      - alert: CheckrGateFailureSpike
+        expr: |
+          (
+            sum by (gate) (rate(checkr_validation_results_total{status="fail"}[5m]))
+            /
+            sum by (gate) (rate(checkr_validation_results_total[5m]))
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: checkr
+        annotations:
+          summary: "Gate {{ $labels.gate }} failing >50% of validations"
+          description: "Validation gate {{ $labels.gate }} has a failure rate of {{ $value | humanizePercentage }}. Possible upstream data quality degradation."
+
+      - alert: CheckrValidationErrorSpike
+        expr: |
+          sum by (gate, code) (rate(checkr_validation_errors_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: checkr
+        annotations:
+          summary: "Validation errors on gate {{ $labels.gate }} (code: {{ $labels.code }})"
+          description: "Gate {{ $labels.gate }} is producing errors at {{ $value | humanize }}/s with code {{ $labels.code }}."
+
+      - alert: CheckrGateSlowExecution
+        expr: |
+          histogram_quantile(0.95, sum by (le, gate) (rate(checkr_validation_duration_seconds_bucket[5m])))
+          > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: checkr
+        annotations:
+          summary: "Gate {{ $labels.gate }} P95 execution time above 30s"
+          description: "Validation gate {{ $labels.gate }} is taking {{ $value | humanizeDuration }} at P95. May indicate slow LLM backend for G-Eval/GABRIEL gates."
+
+      - alert: CheckrGateCriticalLatency
+        expr: |
+          histogram_quantile(0.99, sum by (le, gate) (rate(checkr_validation_duration_seconds_bucket[5m])))
+          > 60
+        for: 5m
+        labels:
+          severity: critical
+          service: checkr
+        annotations:
+          summary: "Gate {{ $labels.gate }} P99 execution time above 60s"
+          description: "Validation gate {{ $labels.gate }} is critically slow — likely LLM backend timeout or resource exhaustion."
+
+      - alert: CheckrNoValidationsRunning
+        expr: |
+          sum(rate(checkr_validation_items_total[10m])) == 0
+        for: 15m
+        labels:
+          severity: warning
+          service: checkr
+        annotations:
+          summary: "No validations executed for 15 minutes"
+          description: "Zero dataset items validated — check if upstream pipelines are submitting work."
+
+  # ── HTTP Latency ────────────────────────────────────────────────────
+  - name: checkr_latency
+    rules:
+      - alert: CheckrHighP95Latency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="checkr"}[5m])) by (le))
+          > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: checkr
+        annotations:
+          summary: "P95 latency above 30s ({{ $value | humanizeDuration }})"
+          description: "Overall checkr P95 request latency exceeds 30 seconds. Validation gates with LLM calls can be slow, but this is excessive."
+
+      - alert: CheckrHighP99Latency
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="checkr"}[5m])) by (le))
+          > 60
+        for: 5m
+        labels:
+          severity: critical
+          service: checkr
+        annotations:
+          summary: "P99 latency above 60s"
+          description: "P99 request latency exceeds 60 seconds — likely LLM backend stall or resource exhaustion."
+
+  # ── LLM Backend Dependency ──────────────────────────────────────────
+  - name: checkr_llm_backend
+    rules:
+      - alert: CheckrLLMBackendDown
+        expr: |
+          probe_success{job="checkr-llm-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: checkr
+        annotations:
+          summary: "checkr LLM backend (yallmp) unreachable"
+          description: "The LLM backend used by G-Eval/GABRIEL validation gates is down. Gates 7-8 will fail."
+
+  # ── Health & Availability ───────────────────────────────────────────
+  - name: checkr_health
+    rules:
+      - alert: CheckrHealthCheckFailing
+        expr: |
+          probe_success{job="checkr"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: checkr
+        annotations:
+          summary: "checkr health check failing"
+          description: "The /health endpoint has been unreachable for over 1 minute."
+
+      - alert: CheckrServiceDown
+        expr: |
+          up{job="checkr"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: checkr
+        annotations:
+          summary: "checkr instance down"
+          description: "Prometheus cannot scrape the checkr /metrics endpoint."
+
+      - alert: CheckrNoTraffic
+        expr: |
+          sum(rate(http_requests_total{job="checkr"}[5m])) == 0
+        for: 10m
+        labels:
+          severity: warning
+          service: checkr
+        annotations:
+          summary: "No HTTP traffic for 10 minutes"
+          description: "Zero requests to checkr — possible routing issue or no validation jobs queued."

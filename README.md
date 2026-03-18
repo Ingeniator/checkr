@@ -45,6 +45,29 @@ Execution is observable and can be extended or audited easily
 
 🛠️ Checkr – REST API Design
 
+## Health & Observability
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/livez` | Liveness probe — instant 200, no dependency checks |
+| GET | `/ready` | Readiness probe — checks LLM backend (yallmp) reachability; returns 200 or 503 |
+| GET | `/health` | Full health status — JSON with component details and version |
+| GET | `/metrics` | Prometheus metrics (HTTP request counts/latency, validation results/errors/duration per gate) |
+
+### Kubernetes probes
+
+- `livenessProbe` → `/livez` (restarts pod if process is stuck)
+- `readinessProbe` → `/ready` (removes pod from service if LLM backend is unreachable)
+
+### Alerting
+
+Prometheus alerting rules are in `devops/alerting/alert_rules.yml`:
+- HTTP error rate spikes (overall and `/api/v0/validate` endpoint)
+- Validation gate failure rate and error spikes
+- Gate execution latency (P95/P99) — catches slow LLM backends for G-Eval/GABRIEL gates
+- LLM backend (yallmp) availability
+- Health check and service availability
+
 ## ✅ Base URL
 All endpoints assume prefix: `/api/v1`
 

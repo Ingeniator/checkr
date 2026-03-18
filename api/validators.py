@@ -6,9 +6,11 @@ from services.frontend_validators_registry import fetch_frontend_validators, fet
 
 from schemas.validators import DatasetGroupValidationRequest, ValidatorDetail, ValidatorType, DataItem, DatasetValidationRequest
 from core.config import settings
+from middlewares.metrics_middleware import VALIDATION_RESULTS, VALIDATION_ITEMS, VALIDATION_ERRORS, VALIDATION_DURATION
 from typing import Any
 from validators.base_geval_validator import DynamicGEvalValidator, request_headers_vars
 import asyncio
+import time
 import structlog
 
 logger = structlog.get_logger().bind(module=__name__)
@@ -71,8 +73,18 @@ async def _validate(gates: list[str], dataset: list[DataItem], options: dict[str
     raw_dataset = [item.model_dump() if hasattr(item, "model_dump") else item.dict() for item in dataset]
 
     async def _run_gate(gate: str):
+        start = time.time()
         validator = request_.app.state.backend_validators_dict[gate](options)
-        return await validator.validate(raw_dataset)
+        result = await validator.validate(raw_dataset)
+        VALIDATION_DURATION.labels(gate=gate).observe(time.time() - start)
+        VALIDATION_ITEMS.labels(gate=gate).inc(len(raw_dataset))
+        status = result.get("status", "failed")
+        VALIDATION_RESULTS.labels(gate=gate, status=status).inc()
+        if status == "failed" and isinstance(result.get("errors"), list):
+            for err in result["errors"]:
+                code = err.get("code", "unspecified") if isinstance(err, dict) else "unspecified"
+                VALIDATION_ERRORS.labels(gate=gate, code=code).inc()
+        return result
 
     results = await asyncio.gather(*(_run_gate(g) for g in gates))
 
@@ -95,8 +107,12 @@ async def _validate(gates: list[str], dataset: list[DataItem], options: dict[str
     return response
 
 def proxy_request_headers(request: Request):
-    request_headers_vars.set({"X-Group-ID": request.headers.get("X-Group-ID", "checkr/validators")})
-    
+    headers = {"X-Group-ID": request.headers.get("X-Group-ID", "checkr/validators")}
+    request_id = request.headers.get("X-Request-ID")
+    if request_id:
+        headers["X-Request-ID"] = request_id
+    request_headers_vars.set(headers)
+
 @router.post("/validate/{source:path}")
 async def validate_dataset(source: str, request: DatasetValidationRequest, request_: Request):
     return await _validate([source], request.dataset, request.options, request_)

@@ -51,13 +51,77 @@ def create_app() -> FastAPI:
     async def get_metrics():
         return await metrics()
 
+    @app.get("/livez")
+    async def livez():
+        """Liveness probe — process is alive, no dependency checks."""
+        return {"status": "ok"}
+
+    @app.get("/ready")
+    async def ready():
+        """Readiness probe — returns 200 if LLM backend is reachable, 503 otherwise."""
+        import asyncio
+        import httpx
+        from starlette.responses import Response as StarletteResponse
+
+        from utils.yaml import load_and_expand_yaml
+
+        try:
+            llm_cfg = load_and_expand_yaml(settings.llm_config_path)
+            api_base = llm_cfg.get("geval", {}).get("api_base", "")
+            if api_base:
+                models_url = f"{api_base}/models"
+                async with httpx.AsyncClient(timeout=3, verify=settings.http_verify_ssl) as client:
+                    resp = await asyncio.wait_for(
+                        client.get(models_url),
+                        timeout=5,
+                    )
+                    resp.raise_for_status()
+        except Exception:
+            return StarletteResponse(status_code=503)
+
+        return StarletteResponse(status_code=200)
+
     @app.get("/health")
     async def health_check():
-        """Check the health of the service and its components."""
+        """Full health status with component details — for dashboards and monitoring."""
+        import asyncio
+        import httpx
 
-        return {
-            "status": "ok",
-            "version": settings.version
+        from utils.yaml import load_and_expand_yaml
+
+        components: dict[str, str] = {}
+        details: dict[str, str] = {}
+
+        # Probe the LLM backend (yallmp) used by G-Eval / GABRIEL validators
+        try:
+            llm_cfg = load_and_expand_yaml(settings.llm_config_path)
+            api_base = llm_cfg.get("geval", {}).get("api_base", "")
+            if api_base:
+                # Hit yallmp's models endpoint as a lightweight probe
+                models_url = f"{api_base}/models"
+                async with httpx.AsyncClient(timeout=3, verify=settings.http_verify_ssl) as client:
+                    resp = await asyncio.wait_for(
+                        client.get(models_url),
+                        timeout=5,
+                    )
+                    resp.raise_for_status()
+                components["llm_backend"] = "ok"
+            else:
+                components["llm_backend"] = "disabled"
+        except Exception as exc:
+            components["llm_backend"] = "degraded"
+            details["llm_backend"] = str(exc)
+
+        enabled = {k: v for k, v in components.items() if v != "disabled"}
+        status = "ok" if all(v == "ok" for v in enabled.values()) else "degraded"
+
+        result: dict = {
+            "status": status,
+            "version": settings.version,
+            "components": components,
         }
+        if details:
+            result["details"] = details
+        return result
 
     return app

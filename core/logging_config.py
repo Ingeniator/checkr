@@ -20,6 +20,7 @@ def setup_logging():
     # 2. Configure structlog
     structlog.configure(
         processors=[
+            structlog.contextvars.merge_contextvars,
             structlog.processors.TimeStamper(fmt="iso"),  # Add timestamp
             structlog.processors.add_log_level,  # Include log level
             structlog.stdlib.add_logger_name,  # Include logger name

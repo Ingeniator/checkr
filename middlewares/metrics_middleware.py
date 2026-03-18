@@ -16,6 +16,31 @@ REQUEST_DURATION = Histogram(
     ["method", "endpoint"]
 )
 
+# Business metrics: validation pass/fail tracking
+VALIDATION_RESULTS = Counter(
+    "checkr_validation_results_total",
+    "Total validation results by gate and outcome",
+    ["gate", "status"]
+)
+
+VALIDATION_ITEMS = Counter(
+    "checkr_validation_items_total",
+    "Total dataset items validated",
+    ["gate"]
+)
+
+VALIDATION_ERRORS = Counter(
+    "checkr_validation_errors_total",
+    "Total validation errors by gate and error code",
+    ["gate", "code"]
+)
+
+VALIDATION_DURATION = Histogram(
+    "checkr_validation_duration_seconds",
+    "Validation execution time per gate",
+    ["gate"]
+)
+
 # Middleware for collecting metrics
 class PrometheusMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

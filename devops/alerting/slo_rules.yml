@@ -1,0 +1,157 @@
+# SLO Recording Rules for checkr
+#
+# Targets:
+#   - Availability: 99.9% (error rate < 0.1%)
+#   - P99 latency: < 60s (LLM-backed validation gates are slow)
+#   - P95 latency: < 30s
+#   - Gate success rate: > 90%
+#
+# Add to your Prometheus config:  rule_files: ["slo_rules.yml"]
+
+groups:
+  # ── Availability SLO (99.9%) ───────────────────────────────────────────
+  - name: checkr_slo_availability
+    interval: 30s
+    rules:
+      - record: checkr:slo_availability:ratio_rate5m
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="checkr", status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="checkr"}[5m]))
+          )
+
+      - record: checkr:slo_availability:ratio_rate30m
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="checkr", status_code=~"5.."}[30m]))
+            /
+            sum(rate(http_requests_total{job="checkr"}[30m]))
+          )
+
+      - record: checkr:slo_availability:ratio_rate1h
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="checkr", status_code=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total{job="checkr"}[1h]))
+          )
+
+      - record: checkr:slo_availability:ratio_rate6h
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="checkr", status_code=~"5.."}[6h]))
+            /
+            sum(rate(http_requests_total{job="checkr"}[6h]))
+          )
+
+      - record: checkr:slo_availability:ratio_rate24h
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{job="checkr", status_code=~"5.."}[24h]))
+            /
+            sum(rate(http_requests_total{job="checkr"}[24h]))
+          )
+
+      - record: checkr:slo_availability:error_budget_remaining
+        expr: |
+          1 - (
+            (1 - checkr:slo_availability:ratio_rate24h)
+            /
+            (1 - 0.999)
+          )
+
+  # ── Latency SLO (P99 < 60s, P95 < 30s) ───────────────────────────────
+  - name: checkr_slo_latency
+    interval: 30s
+    rules:
+      - record: checkr:slo_latency:p95_5m
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="checkr"}[5m])) by (le)
+          )
+
+      - record: checkr:slo_latency:p99_5m
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{job="checkr"}[5m])) by (le)
+          )
+
+      - record: checkr:slo_latency:p95_1h
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="checkr"}[1h])) by (le)
+          )
+
+      - record: checkr:slo_latency:p99_1h
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{job="checkr"}[1h])) by (le)
+          )
+
+      # Fraction of requests completing within 60s
+      - record: checkr:slo_latency:ratio_rate5m
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{job="checkr", le="60"}[5m]))
+          /
+          sum(rate(http_request_duration_seconds_count{job="checkr"}[5m]))
+
+      - record: checkr:slo_latency:ratio_rate1h
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{job="checkr", le="60"}[1h]))
+          /
+          sum(rate(http_request_duration_seconds_count{job="checkr"}[1h]))
+
+      - record: checkr:slo_latency:ratio_rate24h
+        expr: |
+          sum(rate(http_request_duration_seconds_bucket{job="checkr", le="60"}[24h]))
+          /
+          sum(rate(http_request_duration_seconds_count{job="checkr"}[24h]))
+
+  # ── Validation Gate SLO (success rate > 90%) ──────────────────────────
+  - name: checkr_slo_validation
+    interval: 30s
+    rules:
+      # Per-gate success ratio
+      - record: checkr:slo_gate_success:ratio_rate5m
+        expr: |
+          sum by (gate) (rate(checkr_validation_results_total{status="pass"}[5m]))
+          /
+          sum by (gate) (rate(checkr_validation_results_total[5m]))
+
+      - record: checkr:slo_gate_success:ratio_rate1h
+        expr: |
+          sum by (gate) (rate(checkr_validation_results_total{status="pass"}[1h]))
+          /
+          sum by (gate) (rate(checkr_validation_results_total[1h]))
+
+      # Overall gate success ratio
+      - record: checkr:slo_gate_success:ratio_rate24h
+        expr: |
+          sum(rate(checkr_validation_results_total{status="pass"}[24h]))
+          /
+          sum(rate(checkr_validation_results_total[24h]))
+
+      # Per-gate P95 execution time
+      - record: checkr:slo_gate_latency:p95_5m
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le, gate) (rate(checkr_validation_duration_seconds_bucket[5m]))
+          )
+
+      # Items validated per hour (throughput)
+      - record: checkr:validation:items_rate1h
+        expr: |
+          sum(rate(checkr_validation_items_total[1h])) * 3600
+
+  # ── Request Volume ────────────────────────────────────────────────────
+  - name: checkr_slo_throughput
+    interval: 30s
+    rules:
+      - record: checkr:throughput:rate5m
+        expr: |
+          sum(rate(http_requests_total{job="checkr"}[5m]))
+
+      - record: checkr:throughput:rate1h
+        expr: |
+          sum(rate(http_requests_total{job="checkr"}[1h]))
