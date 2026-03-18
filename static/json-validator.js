@@ -459,7 +459,8 @@ class JsonValidator extends HTMLElement {
                   from validators.base_validator import BaseValidator
 
                   # Read options from the injected JSON string
-                  my_options = json.loads('${JSON.stringify(options)}')
+                  import base64 as _b64
+                  my_options = json.loads(_b64.b64decode('${btoa(JSON.stringify(options))}').decode())
 
                   # Collect all subclasses of BaseValidator (excluding BaseValidator itself)
                   candidates = [
