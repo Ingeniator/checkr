@@ -5,3 +5,16 @@ __pycache__
 .ruff_cache
 *.pyc
 .env
+.claude
+.gitignore
+.python-version
+.snapshot.txt
+.ruff_cache
+tests/
+devops/
+grafana/
+frontend/
+Makefile
+README.md
+LICENSE
+uv.lock

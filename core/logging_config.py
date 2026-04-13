@@ -4,6 +4,15 @@ import structlog
 
 _configured = False
 
+SILENCED_PATHS = {"/livez", "/ready", "/health", "/metrics"}
+
+
+class SilenceProbesFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return not any(path in msg for path in SILENCED_PATHS)
+
+
 def setup_logging():
     """Configures logging for the entire application. Safe to call multiple times."""
     global _configured
@@ -35,6 +44,9 @@ def setup_logging():
 
     # 3. Optional: Reduce noisy logs from external libraries
     logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+    if settings.silence_probes:
+        logging.getLogger("uvicorn.access").addFilter(SilenceProbesFilter())
 
     _configured = True
     return structlog.get_logger()
