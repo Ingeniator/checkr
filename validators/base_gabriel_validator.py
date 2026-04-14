@@ -19,10 +19,12 @@ from core.config import settings
 from utils.yaml import load_and_expand_yaml
 from validators.base_validator import BaseValidator, MessagesItem, ValidationDetail
 
+_gabriel_import_error: str | None = None
 try:
     import gabriel
-except ImportError:
+except Exception as _e:
     gabriel = None
+    _gabriel_import_error = str(_e)
 
 
 class BaseGabrielValidator(BaseValidator, ABC):
@@ -88,9 +90,10 @@ class BaseGabrielValidator(BaseValidator, ABC):
 
     async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
         if gabriel is None:
+            detail = _gabriel_import_error or "openai-gabriel is not installed"
             return [
                 ValidationDetail(
-                    error="GABRIEL library not installed. Install with: pip install openai-gabriel",
+                    error=f"GABRIEL library failed to load: {detail}. Install with: pip install openai-gabriel",
                     code="missing_dependency",
                 )
             ]

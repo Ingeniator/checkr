@@ -8,6 +8,10 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 FROM python:3.11-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libffi8 \
+  && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY . .
