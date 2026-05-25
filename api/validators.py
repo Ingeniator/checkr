@@ -9,6 +9,7 @@ from core.config import settings
 from middlewares.metrics_middleware import VALIDATION_RESULTS, VALIDATION_ITEMS, VALIDATION_ERRORS, VALIDATION_DURATION
 from typing import Any
 from validators.base_geval_validator import DynamicGEvalValidator, request_headers_vars
+from validators.gate7_automatic_quality_grading.geval_rubric_validator import GEvalRubricValidator as DynamicRubricEvalValidator
 import asyncio
 import time
 import structlog
@@ -132,3 +133,18 @@ async def g_eval_handler(req: DatasetValidationRequest, request_: Request):
     proxy_request_headers(request_)
     validator = DynamicGEvalValidator(options=req.options)
     return {"status": "passed" if not (errors := await validator._validate(req.dataset)) else "failed", "errors": [e.model_dump() for e in errors]}
+
+@router.post("/rubric-eval")
+async def rubric_eval_handler(req: DatasetValidationRequest, request_: Request):
+    proxy_request_headers(request_)
+    validator = DynamicRubricEvalValidator(options=req.options)
+    errors = await validator._validate(req.dataset)
+    failures = [e for e in errors if e.severity == "error"]
+    info = [e for e in errors if e.severity == "info"]
+    response: dict = {
+        "status": "passed" if not failures else "failed",
+        "errors": [e.model_dump() for e in failures],
+    }
+    if info:
+        response["info"] = [e.model_dump() for e in info]
+    return response
