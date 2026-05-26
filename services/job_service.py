@@ -45,6 +45,15 @@ class JobService:
             return
         await self._save(job.model_copy(update=fields))
 
+    async def update_progress(self, job_id: str, gate: str, current: int, total: int) -> None:
+        """Atomic per-gate progress update — does not clobber other gates."""
+        job = await self.get_job(job_id)
+        if job is None:
+            return
+        progress = dict(job.progress)
+        progress[gate] = {"current": current, "total": total}
+        await self._save(job.model_copy(update={"progress": progress}))
+
     async def enqueue_job(self, job_id: str, dataset: list, options: dict) -> None:
         payload = json.dumps({"job_id": job_id, "dataset": dataset, "options": options})
         await self.redis.rpush(settings.job_queue_key, payload)

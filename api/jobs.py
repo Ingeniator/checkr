@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 import structlog
@@ -105,3 +106,38 @@ async def get_job_status(job_id: str, request_: Request):
     if job is None:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
     return job
+
+
+@router.post("/{job_id}/cancel")
+async def cancel_job(job_id: str, request_: Request):
+    """Cancel a queued or running job."""
+    redis = _redis(request_.app)
+    if redis is None:
+        raise HTTPException(status_code=404, detail="Async mode not enabled.")
+
+    from services.job_service import JobService
+    service = JobService(redis)
+    job = await service.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+
+    terminal = {JobStatus.completed, JobStatus.failed, JobStatus.cancelled}
+    if job.status in terminal:
+        raise HTTPException(status_code=409, detail=f"Job is already {job.status.value}.")
+
+    # Mark cancelled in Redis first — covers the queued case and acts as a
+    # fencing token so the worker won't write results after this point.
+    await service.update_job(
+        job_id,
+        status=JobStatus.cancelled,
+        completed_at=datetime.now(timezone.utc),
+    )
+
+    # If the job is currently running, cancel its asyncio Task
+    running_jobs: dict = getattr(request_.app.state, "running_jobs", {})
+    task = running_jobs.get(job_id)
+    if task and not task.done():
+        task.cancel()
+        logger.info("Cancelled running job task", job_id=job_id)
+
+    return {"job_id": job_id, "status": "cancelled"}

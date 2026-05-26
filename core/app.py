@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI):
         app.state.redis = await aioredis.from_url(
             settings.redis_url, decode_responses=True
         )
+        app.state.running_jobs = {}   # job_id → asyncio.Task (for cancellation)
         app.state.worker_task = asyncio.create_task(worker_loop(app))
         logger.info("Job worker task started")
     else:

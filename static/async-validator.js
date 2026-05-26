@@ -102,6 +102,13 @@ class AsyncValidator extends HTMLElement {
           border-radius: 6px;
         }
         button.secondary:hover { background: #f0f0f0; }
+        button.danger {
+          padding: 7px 16px; font-size: 0.9rem; cursor: pointer;
+          background: #fff; color: #dc2626; border: 1px solid #fca5a5;
+          border-radius: 6px;
+        }
+        button.danger:hover { background: #fef2f2; border-color: #f87171; }
+        button.danger:disabled { opacity: .45; cursor: default; }
 
         /* status bar */
         #status-bar {
@@ -127,8 +134,9 @@ class AsyncValidator extends HTMLElement {
         .badge-queued   { background: #e0e7ff; color: #3730a3; }
         .badge-running  { background: #fef3c7; color: #92400e; }
         .badge-completed{ background: #d1fae5; color: #065f46; }
-        .badge-failed   { background: #fee2e2; color: #991b1b; }
-        .badge-sync     { background: #f3f4f6; color: #374151; }
+        .badge-failed    { background: #fee2e2; color: #991b1b; }
+        .badge-cancelled { background: #f3f4f6; color: #6b7280; }
+        .badge-sync      { background: #f3f4f6; color: #374151; }
         .job-id {
           font-family: monospace; font-size: 0.78rem; color: #555;
           background: #f3f4f6; padding: 2px 8px; border-radius: 4px;
@@ -193,6 +201,7 @@ class AsyncValidator extends HTMLElement {
 
       <div class="actions">
         <button class="primary" id="run-btn" disabled>Submit</button>
+        <button class="danger" id="cancel-btn" style="display:none;">Cancel</button>
         <button class="secondary" id="clear-btn">Clear</button>
         <span id="mode-chip" class="mode-chip" style="display:none;"></span>
       </div>
@@ -216,7 +225,8 @@ class AsyncValidator extends HTMLElement {
   // -----------------------------------------------------------------------
   async connectedCallback() {
     this._base = this.getAttribute('validator-source') || '';
-    this._mode = null; // 'async' | 'sync' — discovered on first submit
+    this._mode = null;      // 'async' | 'sync' — discovered on first submit
+    this._activeJobId = null; // job currently being polled
 
     this._bindUI();
 
@@ -234,6 +244,7 @@ class AsyncValidator extends HTMLElement {
 
     // Buttons
     $('run-btn').addEventListener('click', () => this._run());
+    $('cancel-btn').addEventListener('click', () => this._cancel());
     $('clear-btn').addEventListener('click', () => this._clearOutput());
 
     // Default dataset
@@ -368,6 +379,7 @@ class AsyncValidator extends HTMLElement {
 
       if (body.job_id) {
         // ---- Async mode ------------------------------------------------
+        this._activeJobId = body.job_id;
         this._setMode('async');
         this._showStatus('queued', body.job_id);
         await this._poll(body.job_id);
@@ -380,6 +392,7 @@ class AsyncValidator extends HTMLElement {
     } catch (e) {
       this._setOutput(`❌ ${e.message || e}`);
     } finally {
+      this._activeJobId = null;
       this._setRunning(false);
     }
   }
@@ -410,9 +423,11 @@ class AsyncValidator extends HTMLElement {
 
       this._showStatus(job.status, jobId, job.progress);
 
-      if (job.status === 'completed' || job.status === 'failed') {
+      if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
         if (job.status === 'failed') {
           this._setOutput(`❌ Job failed:\n${job.error || 'unknown error'}`);
+        } else if (job.status === 'cancelled') {
+          this._setOutput('🚫 Job was cancelled.');
         } else {
           this._renderResult(job.result);
         }
@@ -460,6 +475,35 @@ class AsyncValidator extends HTMLElement {
   _setRunning(on) {
     this.shadowRoot.getElementById('run-btn').disabled = on;
     this.shadowRoot.getElementById('run-btn').textContent = on ? '⏳ Running…' : 'Submit';
+    // Show cancel only while an async job is in flight
+    const cancelBtn = this.shadowRoot.getElementById('cancel-btn');
+    cancelBtn.style.display = (on && this._mode === 'async') ? '' : 'none';
+    cancelBtn.disabled = false;
+    cancelBtn.textContent = 'Cancel';
+  }
+
+  async _cancel() {
+    const jobId = this._activeJobId;
+    if (!jobId) return;
+
+    const cancelBtn = this.shadowRoot.getElementById('cancel-btn');
+    cancelBtn.disabled = true;
+    cancelBtn.textContent = 'Cancelling…';
+
+    try {
+      const res = await fetch(`${this._base}/jobs/${jobId}/cancel`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        this._setOutput(`❌ Cancel failed: ${err.detail || res.status}`);
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = 'Cancel';
+      }
+      // Poll will detect the 'cancelled' status on next tick and stop itself
+    } catch (e) {
+      this._setOutput(`❌ Cancel error: ${e.message}`);
+      cancelBtn.disabled = false;
+      cancelBtn.textContent = 'Cancel';
+    }
   }
 
   _setMode(mode) {
@@ -493,11 +537,16 @@ class AsyncValidator extends HTMLElement {
       link.style.display = 'none';
     }
 
-    if (progress && progress.total > 0) {
+    // progress is now {gate: {current, total}} — aggregate across all gates
+    const gates = Object.values(progress || {});
+    const aggCurrent = gates.reduce((s, g) => s + (g.current || 0), 0);
+    const aggTotal   = gates.reduce((s, g) => s + (g.total   || 0), 0);
+
+    if (aggTotal > 0) {
       pw.classList.add('visible');
-      const pct = Math.round((progress.current / progress.total) * 100);
+      const pct = Math.round((aggCurrent / aggTotal) * 100);
       pb.value = pct;
-      pl.textContent = `${progress.current} / ${progress.total}`;
+      pl.textContent = `${aggCurrent} / ${aggTotal}`;
     } else if (status === 'running') {
       pw.classList.add('visible');
       pb.removeAttribute('value'); // indeterminate

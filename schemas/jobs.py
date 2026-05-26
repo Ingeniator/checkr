@@ -13,6 +13,7 @@ class JobStatus(str, Enum):
     running = "running"
     completed = "completed"
     failed = "failed"
+    cancelled = "cancelled"
 
 
 class JobRecord(BaseModel):
@@ -20,7 +21,7 @@ class JobRecord(BaseModel):
     status: JobStatus = JobStatus.queued
     gates: list[str] = []
     dataset_size: int = 0
-    progress: dict[str, int] | None = None
+    progress: dict[str, dict[str, int]] = {}  # {gate: {current, total}}
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: datetime | None = None
     completed_at: datetime | None = None
