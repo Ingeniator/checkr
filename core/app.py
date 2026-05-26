@@ -1,5 +1,7 @@
 
 # core/app.py
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,25 +13,52 @@ import structlog
 from middlewares.metrics_middleware import PrometheusMiddleware, metrics
 
 from api.validators import router as validator_router, init_validators
+from api.jobs import router as jobs_router
 
 logger = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic
+    # Startup
     logger.info("Application startup...")
     await init_validators(app)
-    
-    yield  # ← This is where the app runs
 
-    # Shutdown logic (optional)
+    # Async job queue — only when Redis is configured
+    if settings.redis_url:
+        import redis.asyncio as aioredis
+        from services.job_worker import worker_loop
+
+        logger.info("Connecting to Redis", url=settings.redis_url)
+        app.state.redis = await aioredis.from_url(
+            settings.redis_url, decode_responses=True
+        )
+        app.state.worker_task = asyncio.create_task(worker_loop(app))
+        logger.info("Job worker task started")
+    else:
+        logger.info("No CHECKR_REDIS_URL — running in sync mode (no job queue)")
+
+    yield  # ← app is running
+
+    # Shutdown
     logger.info("Application shutdown...")
-    # e.g., await app.state.backend_validators.cleanup() if needed
+    if settings.redis_url:
+        task: asyncio.Task = getattr(app.state, "worker_task", None)
+        if task and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        redis = getattr(app.state, "redis", None)
+        if redis:
+            await redis.aclose()
+        logger.info("Redis connection closed")
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(title=settings.app_name, root_path=settings.root_path, debug=settings.debug, lifespan=lifespan)
     app.include_router(validator_router, prefix="/api/v0")
+    app.include_router(jobs_router, prefix="/api/v0/jobs")
     # Add Logging Middleware
     app.add_middleware(LoggingMiddleware)
     # Add Prometheus middleware
@@ -37,10 +66,15 @@ def create_app() -> FastAPI:
 
     # Serve static files (e.g., CSS, JS, images) at /static
     app.mount("/static", StaticFiles(directory="static"), name="static")
-    # Serve index.html as playground
+    # Serve index.html as sync playground
     @app.get("/playground", include_in_schema=False)
     async def playground():
         return FileResponse(Path("static/index.html"))
+
+    # Async playground (job queue / polling)
+    @app.get("/async-playground", include_in_schema=False)
+    async def async_playground():
+        return FileResponse(Path("static/async-playground.html"))
 
     @app.get("/", include_in_schema=False)
     async def root():

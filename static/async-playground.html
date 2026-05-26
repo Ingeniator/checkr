@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Async Validation Playground — Checkr</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <script type="module" src="/validators/static/async-validator.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 2rem auto;
+      max-width: 980px;
+      padding: 0 1rem;
+      color: #111;
+      background: #f4f4f7;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: .25rem; }
+    .subtitle {
+      color: #555; font-size: .9rem; margin-bottom: 1.5rem;
+    }
+    .nav { margin-top: 1.5rem; font-size: .85rem; }
+    .nav a { color: #2563eb; text-decoration: none; margin-right: 1rem; }
+    .nav a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>⚡ Async Validation Playground</h1>
+  <p class="subtitle">
+    Submits your dataset to the backend job queue and polls for results.
+    Only <strong>backend validators</strong> (🗄️) are available here.<br>
+    For in-browser (Pyodide) validators see the
+    <a href="/validators/playground">sync playground</a>.
+  </p>
+
+  <async-validator
+    validator-source="/validators/api/v0">
+  </async-validator>
+
+  <div class="nav">
+    <a href="/validators/playground">↩ Sync Playground</a>
+    <a href="/validators/docs">API Docs</a>
+  </div>
+</body>
+</html>
