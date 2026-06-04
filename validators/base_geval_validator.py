@@ -83,6 +83,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
         threshold = self.options.get("score_threshold", 70)
         preview_limit = self.options.get("preview_limit", 3)
         max_concurrency = self.options.get("max_concurrency", 10)
+        info_mode = self.options.get("info_mode", False)
         all_avg_scores = []
 
         # ── Phase 1: collect (item_idx, prompt) — one per pair (dialog) or per item (trace) ──
@@ -143,7 +144,14 @@ class BaseGEvalValidator(BaseValidator, ABC):
                 avg = sum(scores) / len(scores)
                 all_avg_scores.append(avg)
 
-                if avg < threshold:
+                if info_mode:
+                    errors.append(ValidationDetail(
+                        index=idx,
+                        severity="info",
+                        code="item_score",
+                        error=f"{self.score_title}: {avg:.1f}",
+                    ))
+                elif avg < threshold:
                     ptype, pdata = preview_map[idx]
                     if ptype == "trace":
                         clipped = pdata[:500] + "…" if len(pdata) > 500 else pdata
@@ -162,7 +170,7 @@ class BaseGEvalValidator(BaseValidator, ABC):
                     ))
             self.report_progress(idx + 1, len(data))
 
-        if errors and all_avg_scores:
+        if all_avg_scores and (errors or info_mode):
             errors.append(ValidationDetail(
                 index=None,
                 code="score_distribution",

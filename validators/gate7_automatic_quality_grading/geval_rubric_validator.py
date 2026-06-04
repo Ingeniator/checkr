@@ -105,6 +105,7 @@ class GEvalRubricValidator(BaseGEvalValidator):
         threshold = self.options.get("score_threshold", 70)
         preview_limit = self.options.get("preview_limit", 3)
         max_concurrency = self.options.get("max_concurrency", 10)
+        info_mode = self.options.get("info_mode", False)
         model = self.config.get("model", "gpt-4")
 
         criteria = _normalize_rubric(raw_rubric)
@@ -189,11 +190,19 @@ class GEvalRubricValidator(BaseGEvalValidator):
             composite = sum(per_crit_avg[name] * criteria[name]["weight"] for name in criteria)
             all_composite_scores.append(composite)
 
-            if composite < threshold:
-                breakdown = ", ".join(
-                    f"{name}={per_crit_avg[name]:.1f} (w={criteria[name]['weight']:.2f})"
-                    for name in criteria
-                )
+            breakdown = ", ".join(
+                f"{name}={per_crit_avg[name]:.1f} (w={criteria[name]['weight']:.2f})"
+                for name in criteria
+            )
+
+            if info_mode:
+                errors.append(ValidationDetail(
+                    index=idx,
+                    severity="info",
+                    code="item_score",
+                    error=f"Rubric composite: {composite:.1f}. Breakdown: {breakdown}",
+                ))
+            elif composite < threshold:
                 ptype, pdata = item_meta[idx]
                 if ptype == "trace":
                     clipped = pdata[:500] + "…" if len(pdata) > 500 else pdata
@@ -214,7 +223,7 @@ class GEvalRubricValidator(BaseGEvalValidator):
             self.report_progress(idx + 1, len(data))
 
         # ── Phase 5: attach histogram ─────────────────────────────────────────
-        if errors and all_composite_scores:
+        if all_composite_scores and (errors or info_mode):
             errors.append(ValidationDetail(
                 index=None,
                 code="score_distribution",

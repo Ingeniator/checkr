@@ -453,6 +453,145 @@ class TestGEvalRubricValidator:
         assert result["status"] == "passed"
 
 
+# ── Info mode ────────────────────────────────────────────────────────────────
+
+class TestInfoMode:
+    """
+    info_mode=True: scores are computed but no threshold is applied.
+    All results land in the "info" channel — status is always "passed".
+    Useful for monitoring / exploratory scoring without gating on quality.
+    """
+
+    @pytest.mark.asyncio
+    async def test_relevance_info_mode_always_passes(self):
+        from validators.gate7_automatic_quality_grading.geval_relevance_validator import (
+            GEvalRelevanceValidator,
+        )
+
+        # Scores well below any threshold — should still pass in info_mode
+        validator = GEvalRelevanceValidator(options={"info_mode": True, "score_threshold": 90})
+        with patch.object(validator, "call_llm", new=AsyncMock(return_value="20")):
+            result = await validator.validate(SAMPLE_DATA)
+
+        assert result["status"] == "passed"
+        assert "errors" not in result
+
+    @pytest.mark.asyncio
+    async def test_relevance_info_mode_scores_in_info_channel(self):
+        from validators.gate7_automatic_quality_grading.geval_relevance_validator import (
+            GEvalRelevanceValidator,
+        )
+
+        validator = GEvalRelevanceValidator(options={"info_mode": True})
+        with patch.object(validator, "call_llm", new=AsyncMock(return_value="75")):
+            result = await validator.validate(SAMPLE_DATA)
+
+        assert result["status"] == "passed"
+        info = result.get("info", [])
+        item_scores = [i for i in info if i["code"] == "item_score"]
+        assert len(item_scores) == len(SAMPLE_DATA)
+        assert all("Relevance Score" in i["error"] for i in item_scores)
+        assert all("75" in i["error"] for i in item_scores)
+
+    @pytest.mark.asyncio
+    async def test_relevance_info_mode_always_has_histogram(self):
+        """Histogram is emitted even when no items fail (all scores are high)."""
+        from validators.gate7_automatic_quality_grading.geval_relevance_validator import (
+            GEvalRelevanceValidator,
+        )
+
+        validator = GEvalRelevanceValidator(options={"info_mode": True, "score_threshold": 50})
+        with patch.object(validator, "call_llm", new=AsyncMock(return_value="95")):
+            result = await validator.validate(SAMPLE_DATA)
+
+        assert result["status"] == "passed"
+        charts = [i for i in result.get("info", []) if i["code"] == "score_distribution"]
+        assert len(charts) == 1
+
+    @pytest.mark.asyncio
+    async def test_rubric_info_mode_always_passes(self):
+        from validators.gate7_automatic_quality_grading.geval_rubric_validator import (
+            GEvalRubricValidator,
+        )
+
+        validator = GEvalRubricValidator(options={"info_mode": True, "score_threshold": 99})
+        with patch.object(validator, "call_llm", new=AsyncMock(return_value="10")):
+            result = await validator.validate(SAMPLE_DATA)
+
+        assert result["status"] == "passed"
+        assert "errors" not in result
+
+    @pytest.mark.asyncio
+    async def test_rubric_info_mode_includes_breakdown_per_item(self):
+        from validators.gate7_automatic_quality_grading.geval_rubric_validator import (
+            GEvalRubricValidator,
+        )
+
+        rubric = {
+            "helpfulness": {"description": "helpful?", "weight": 2.0},
+            "accuracy":    {"description": "accurate?", "weight": 1.0},
+        }
+        validator = GEvalRubricValidator(options={"info_mode": True, "rubric": rubric})
+        with patch.object(validator, "call_llm", new=AsyncMock(return_value="80")):
+            result = await validator.validate(SAMPLE_DATA)
+
+        assert result["status"] == "passed"
+        info = result.get("info", [])
+        item_scores = [i for i in info if i["code"] == "item_score"]
+        assert len(item_scores) == len(SAMPLE_DATA)
+        # Each item error message contains per-criterion breakdown
+        assert all("helpfulness" in i["error"] for i in item_scores)
+        assert all("accuracy" in i["error"] for i in item_scores)
+
+    @pytest.mark.asyncio
+    async def test_rubric_info_mode_histogram_always_present(self):
+        from validators.gate7_automatic_quality_grading.geval_rubric_validator import (
+            GEvalRubricValidator,
+        )
+
+        validator = GEvalRubricValidator(options={"info_mode": True})
+        with patch.object(validator, "call_llm", new=AsyncMock(return_value="95")):
+            result = await validator.validate(SAMPLE_DATA)
+
+        assert result["status"] == "passed"
+        charts = [i for i in result.get("info", []) if i["code"] == "score_distribution"]
+        assert len(charts) == 1
+
+    @pytest.mark.asyncio
+    async def test_info_mode_works_on_agent_traces(self):
+        """info_mode also works for trace items — useful for Airflow monitoring runs."""
+        from validators.gate7_automatic_quality_grading.geval_rubric_validator import (
+            GEvalRubricValidator,
+        )
+
+        rubric = {
+            "goal_completion": "Did the agent complete the goal?",
+            "tool_use_quality": "Were tools used correctly?",
+        }
+        validator = GEvalRubricValidator(options={"info_mode": True, "rubric": rubric})
+        with patch.object(validator, "call_llm", new=AsyncMock(return_value="72")):
+            result = await validator.validate(AGENT_TRACES)
+
+        assert result["status"] == "passed"
+        info = result.get("info", [])
+        item_scores = [i for i in info if i["code"] == "item_score"]
+        assert len(item_scores) == len(AGENT_TRACES)
+
+    @pytest.mark.asyncio
+    async def test_eval_errors_still_fail_in_info_mode(self):
+        """LLM call failures are real errors and surface even when info_mode=True."""
+        from validators.gate7_automatic_quality_grading.geval_relevance_validator import (
+            GEvalRelevanceValidator,
+        )
+
+        validator = GEvalRelevanceValidator(options={"info_mode": True})
+        with patch.object(validator, "call_llm", new=AsyncMock(side_effect=RuntimeError("down"))):
+            result = await validator.validate(SAMPLE_DATA)
+
+        assert result["status"] == "failed"
+        assert all(e["code"] == "eval_error" for e in result["errors"])
+
+
 # ── DynamicGEvalValidator ─────────────────────────────────────────────────────
 
 class TestDynamicGEvalValidator:
