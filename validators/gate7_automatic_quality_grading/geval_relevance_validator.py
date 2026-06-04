@@ -19,8 +19,7 @@ class GEvalRelevanceValidator(BaseGEvalValidator):
         "You are a helpful assistant and fair assistant evaluator.\n\n"
         "Evaluate how relevant the assistant's response is to the user's message.\n"
         "Score from 1 (completely irrelevant) to 100 (highly relevant).\n\n"
-        "User:\n{user}\n\n"
-        "Assistant:\n{assistant}\n\n"
+        "{content}\n\n"
         "Only respond with a number from 1 to 100."
     )
     score_title = "Relevance Score"

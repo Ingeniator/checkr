@@ -13,11 +13,12 @@ class ValidatorType(str, Enum):
     base = "base"
 
 class Message(BaseModel):
-    role: Literal["user", "assistant", "system", "function"]
+    role: Literal["user", "assistant", "system", "function", "tool"]
     content: str
 
 class DataItem(BaseModel):
     messages: list[Message]
+    item_type: Literal["dialog", "trace"] | None = None
 
     @model_validator(mode='before')
     @classmethod

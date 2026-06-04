@@ -31,17 +31,16 @@ from collections import defaultdict
 
 from utils.async_utils import gather_with_semaphore
 from utils.vega_charts import vega_histogram
-from validators.base_geval_validator import BaseGEvalValidator
-from validators.base_validator import MessagesItem, ValidationDetail
+from validators.base_geval_validator import BaseGEvalValidator, _format_trace
+from validators.base_validator import MessagesItem, ValidationDetail, _resolve_item_type
 
 _CRITERION_PROMPT = (
     "You are an objective evaluator.\n\n"
-    "Evaluate the assistant's response on the following criterion:\n"
+    "Evaluate the following on this criterion:\n"
     "Criterion: {criterion}\n"
     "{description}\n\n"
     "Score from 1 (very poor) to 100 (excellent).\n\n"
-    "User:\n{user}\n\n"
-    "Assistant:\n{assistant}\n\n"
+    "{content}\n\n"
     "Only respond with a number from 1 to 100."
 )
 
@@ -78,9 +77,11 @@ class GEvalRubricValidator(BaseGEvalValidator):
     """
     LLM-as-judge rubric scoring validator.
 
-    For every dialog item, fires one LLM call per (criterion, user-assistant pair).
-    Scores are averaged across pairs to produce a per-criterion item score, then
-    combined into a weighted composite score that is checked against score_threshold.
+    Auto-detects item type from message roles:
+      - "dialog" items: one LLM call per (criterion × user→assistant pair); scores averaged per criterion.
+      - "trace" items (contain system/tool/function messages): one LLM call per criterion over the full trace.
+
+    Both paths feed the same weighted composite scoring and threshold check.
     """
 
     async def _validate(self, data: list[MessagesItem]) -> list[ValidationDetail]:
@@ -108,68 +109,72 @@ class GEvalRubricValidator(BaseGEvalValidator):
 
         criteria = _normalize_rubric(raw_rubric)
 
-        # ── Phase 1: collect (item_idx, criterion, user, assistant) tuples ──────
-        calls: list[tuple[int, str, str, str]] = []
-        pairs_by_item: dict[int, list[tuple[str, str]]] = {}
+        # ── Phase 1: collect (item_idx, crit_name, prompt) ───────────────────
+        # dialog: one call per (criterion × pair); trace: one call per criterion.
+        calls: list[tuple[int, str, str]] = []
+        # item_idx → ("dialog", pairs) | ("trace", trace_str)
+        item_meta: dict[int, tuple[str, Any]] = {}
 
         for idx, item in enumerate(data):
-            pairs = [
-                (item.messages[i - 1].content, item.messages[i].content)
-                for i in range(1, len(item.messages))
-                if item.messages[i].role == "assistant"
-                and item.messages[i - 1].role == "user"
-            ]
+            itype = _resolve_item_type(item)
 
-            if not pairs:
-                errors.append(ValidationDetail(
-                    index=idx,
-                    error="No user-assistant pairs found.",
-                    code="no_valid_pairs",
-                ))
-                continue
+            if itype == "trace":
+                trace_str = _format_trace(item.messages)
+                item_meta[idx] = ("trace", trace_str)
+                content = f"Trace:\n{trace_str}"
+                for crit_name, crit in criteria.items():
+                    prompt = _CRITERION_PROMPT.format(
+                        criterion=crit_name, description=crit["description"], content=content,
+                    )
+                    calls.append((idx, crit_name, prompt))
+            else:
+                pairs = [
+                    (item.messages[i - 1].content, item.messages[i].content)
+                    for i in range(1, len(item.messages))
+                    if item.messages[i].role == "assistant" and item.messages[i - 1].role == "user"
+                ]
+                if not pairs:
+                    errors.append(ValidationDetail(
+                        index=idx, error="No user-assistant pairs found.", code="no_valid_pairs",
+                    ))
+                    continue
+                item_meta[idx] = ("dialog", pairs)
+                for u, a in pairs:
+                    content = f"User:\n{u}\n\nAssistant:\n{a}"
+                    for crit_name, crit in criteria.items():
+                        prompt = _CRITERION_PROMPT.format(
+                            criterion=crit_name, description=crit["description"], content=content,
+                        )
+                        calls.append((idx, crit_name, prompt))
 
-            pairs_by_item[idx] = pairs
-            for u, a in pairs:
-                for crit_name in criteria:
-                    calls.append((idx, crit_name, u, a))
-
-        # ── Phase 2: fire all LLM calls concurrently ─────────────────────────────
-        async def _call(criterion_name: str, user: str, assistant: str) -> float:
-            crit = criteria[criterion_name]
-            prompt = _CRITERION_PROMPT.format(
-                criterion=criterion_name,
-                description=crit["description"],
-                user=user,
-                assistant=assistant,
-            )
+        # ── Phase 2: fire all LLM calls concurrently ─────────────────────────
+        async def _call(prompt: str) -> float:
             raw = await self.call_llm(prompt, model)
             return self._extract_score_from_output(raw)
 
-        coros = [_call(crit, u, a) for _, crit, u, a in calls]
+        coros = [_call(prompt) for _, _, prompt in calls]
         raw_results = await gather_with_semaphore(coros, max_concurrency=max_concurrency)
 
-        # ── Phase 3: regroup scores by item → criterion ───────────────────────────
+        # ── Phase 3: regroup scores by item → criterion (as list for averaging) ─
         scores_by_item: dict[int, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
         error_by_item: dict[int, Exception] = {}
 
-        for (item_idx, crit_name, _, _), result in zip(calls, raw_results):
+        for (item_idx, crit_name, _), result in zip(calls, raw_results):
             if isinstance(result, BaseException):
                 error_by_item.setdefault(item_idx, result)
             else:
                 scores_by_item[item_idx][crit_name].append(result)
 
-        # ── Phase 4: compute weighted composite scores and apply threshold ────────
+        # ── Phase 4: weighted composite + threshold ───────────────────────────
         all_composite_scores: list[float] = []
 
         for idx in range(len(data)):
-            if idx not in pairs_by_item:
-                continue  # already reported as no-pairs error
+            if idx not in item_meta:
+                continue
 
             if idx in error_by_item:
                 errors.append(ValidationDetail(
-                    index=idx,
-                    error=f"Evaluation failed: {error_by_item[idx]}",
-                    code="eval_error",
+                    index=idx, error=f"Evaluation failed: {error_by_item[idx]}", code="eval_error",
                 ))
                 continue
 
@@ -177,13 +182,10 @@ class GEvalRubricValidator(BaseGEvalValidator):
             if not crit_scores:
                 continue
 
-            # Average pair-level scores → per-criterion item score
             per_crit_avg: dict[str, float] = {
                 name: (sum(crit_scores[name]) / len(crit_scores[name]) if crit_scores.get(name) else 0.0)
                 for name in criteria
             }
-
-            # Weighted composite
             composite = sum(per_crit_avg[name] * criteria[name]["weight"] for name in criteria)
             all_composite_scores.append(composite)
 
@@ -192,25 +194,26 @@ class GEvalRubricValidator(BaseGEvalValidator):
                     f"{name}={per_crit_avg[name]:.1f} (w={criteria[name]['weight']:.2f})"
                     for name in criteria
                 )
-                preview_lines: list[str] = []
-                for u, a in pairs_by_item[idx][:preview_limit]:
-                    preview_lines.append(f"user: &quot;{html.escape(u)}&quot;")
-                    preview_lines.append(f"assistant: &quot;{html.escape(a)}&quot;")
-                preview = "\n".join(preview_lines)
-
+                ptype, pdata = item_meta[idx]
+                if ptype == "trace":
+                    clipped = pdata[:500] + "…" if len(pdata) > 500 else pdata
+                    field = f"<pre>{html.escape(clipped)}</pre>"
+                else:
+                    lines = [
+                        f"user: &quot;{html.escape(u)}&quot;\nassistant: &quot;{html.escape(a)}&quot;"
+                        for u, a in pdata[:preview_limit]
+                    ]
+                    field = f"<pre>{chr(10).join(lines)}</pre>"
                 errors.append(ValidationDetail(
                     index=idx,
-                    error=(
-                        f"Rubric score too low (composite={composite:.2f} < {threshold}). "
-                        f"Breakdown: {breakdown}"
-                    ),
-                    field=f"<pre>{preview}</pre>",
+                    error=f"Rubric score too low (composite={composite:.2f} < {threshold}). Breakdown: {breakdown}",
+                    field=field,
                     code="low_rubric_score",
                 ))
 
             self.report_progress(idx + 1, len(data))
 
-        # ── Phase 5: attach histogram when there are failures ─────────────────────
+        # ── Phase 5: attach histogram ─────────────────────────────────────────
         if errors and all_composite_scores:
             errors.append(ValidationDetail(
                 index=None,
@@ -218,9 +221,7 @@ class GEvalRubricValidator(BaseGEvalValidator):
                 error=f"Rubric Score Distribution (n={len(all_composite_scores)})",
                 severity="info",
                 chart=vega_histogram(
-                    all_composite_scores,
-                    title="Rubric Composite Score Distribution",
-                    threshold=threshold,
+                    all_composite_scores, title="Rubric Composite Score Distribution", threshold=threshold,
                 ),
             ))
 

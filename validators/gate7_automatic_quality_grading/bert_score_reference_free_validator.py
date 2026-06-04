@@ -29,6 +29,25 @@ class BertScoreReferenceFreeValidator(BaseValidator):
             assistant_outputs = []
             preview_pairs = []
 
+            # TODO: add trace support (this validator is currently dialog-only).
+            #
+            # The codebase now supports two item types, auto-detected from message roles:
+            #   "dialog" — pure user/assistant pairs (current behaviour)
+            #   "trace"  — sequences containing system/tool/function messages
+            #              (e.g. agent execution traces from Airflow pipelines)
+            #
+            # To upgrade:
+            #   1. Import: from validators.base_validator import _resolve_item_type
+            #   2. Before this loop, call itype = _resolve_item_type(item).
+            #   3. If itype == "trace": concatenate all assistant turns as the
+            #      candidate and all user turns as the reference (or the full
+            #      _format_trace(item.messages) string as a single-item list),
+            #      then run one BERTScore call per item rather than per pair.
+            #      _format_trace is importable from validators.base_geval_validator.
+            #   4. If itype == "dialog": keep the existing pair-extraction loop below.
+            #
+            # See GEvalRelevanceValidator._validate in base_geval_validator.py for
+            # the canonical per-item routing pattern.
             for i in range(1, len(item.messages)):
                 current = item.messages[i]
                 prev = item.messages[i - 1]

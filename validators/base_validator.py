@@ -9,7 +9,7 @@ tags: [abstract]
 
 import asyncio
 from abc import ABC
-from typing import Any
+from typing import Any, Literal
 from pydantic import BaseModel, field_validator, model_validator, ValidationError
 import time
 
@@ -22,8 +22,25 @@ class Message(BaseModel):
     role: str
     content: str
 
+_TRACE_ROLES = {"system", "tool", "function"}
+
+
+def _resolve_item_type(item) -> Literal["dialog", "trace"]:
+    """Return "trace" when the item contains system/tool/function messages; "dialog" otherwise.
+
+    Explicit item_type overrides auto-detection. Uses getattr so it works with
+    any object that has a .messages attribute (MessagesItem, DataItem, etc.).
+    """
+    explicit = getattr(item, "item_type", None)
+    if explicit is not None:
+        return explicit
+    roles = {msg.role for msg in item.messages}
+    return "trace" if roles & _TRACE_ROLES else "dialog"
+
+
 class MessagesItem(BaseModel):
     messages: list[Message]
+    item_type: Literal["dialog", "trace"] | None = None
 
     @model_validator(mode='before')
     @classmethod
